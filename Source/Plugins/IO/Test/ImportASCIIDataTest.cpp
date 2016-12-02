@@ -51,7 +51,7 @@
 #include "SIMPLib/Utilities/UnitTestSupport.hpp"
 
 #include "IO/IOFilters/ReadASCIIData.h"
-#include "IO/Widgets/ImportASCIIDataWizard/ASCIIWizardData.hpp"
+#include "IO/IOFilters/util/ASCIIWizardData.hpp"
 
 #include "IOTestFileLocations.h"
 
@@ -138,7 +138,7 @@ public:
   {
     DataContainerArray::Pointer dca = DataContainerArray::New();
     DataContainer::Pointer dc = DataContainer::New(DataContainerName);
-    AttributeMatrix::Pointer am = AttributeMatrix::New(QVector<size_t>(1, data.numberOfLines), AttributeMatrixName, 3);
+    AttributeMatrix::Pointer am = AttributeMatrix::New(QVector<size_t>(1, data.numberOfLines), AttributeMatrixName, AttributeMatrix::Type::Cell);
     dc->addAttributeMatrix(AttributeMatrixName, am);
     dca->addDataContainer(dc);
 

@@ -128,8 +128,9 @@ void StatsGeneratorWidget::setupGui()
   {
     PrimaryPhaseWidget* ppw = new PrimaryPhaseWidget;
     ppw->setPhaseIndex(1);
-    ppw->setPhaseType(SIMPL::PhaseType::PrimaryPhase);
+    ppw->setPhaseType(PhaseType::Type::PrimaryPhase);
     ppw->setCrystalStructure(Ebsd::CrystalStructure::Cubic_High);
+    ppw->setPhaseName("Primary (1)");
     ppw->setPhaseFraction(1.0);
     ppw->setTotalPhaseFraction(1.0);
     phaseTabs->addTab(ppw, "Primary");
@@ -143,7 +144,7 @@ void StatsGeneratorWidget::setupGui()
     progress.setWindowModality(Qt::WindowModal);
 
     QVector<size_t> tDims(1, ensembles);
-    AttributeMatrix::Pointer cellEnsembleAttrMat = AttributeMatrix::New(tDims, SIMPL::Defaults::CellEnsembleAttributeMatrixName, SIMPL::AttributeMatrixType::CellEnsemble);
+    AttributeMatrix::Pointer cellEnsembleAttrMat = AttributeMatrix::New(tDims, SIMPL::Defaults::CellEnsembleAttributeMatrixName, AttributeMatrix::Type::CellEnsemble);
     cellEnsembleAttrMat->addAttributeArray(sda->getName(), sda);
     UInt32ArrayType::Pointer phaseTypes = m_Filter->getPhaseTypes();
     cellEnsembleAttrMat->addAttributeArray(phaseTypes->getName(), phaseTypes);
@@ -160,40 +161,45 @@ void StatsGeneratorWidget::setupGui()
       }
       StatsData::Pointer statsData = sda->getStatsData(phase);
 
-      if(phaseTypes->getValue(phase) == SIMPL::PhaseType::BoundaryPhase)
+      if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::BoundaryPhase))
       {
         progress.setLabelText("Opening Boundaray Phase...");
         BoundaryPhaseWidget* w = new BoundaryPhaseWidget(this);
         phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
-      else if(phaseTypes->getValue(phase) == SIMPL::PhaseType::MatrixPhase)
+      else if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::MatrixPhase))
       {
         progress.setLabelText("Opening Matrix Phase...");
         MatrixPhaseWidget* w = new MatrixPhaseWidget(this);
         phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
-      if(phaseTypes->getValue(phase) == SIMPL::PhaseType::PrecipitatePhase)
+      if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::PrecipitatePhase))
       {
         progress.setLabelText("Opening Precipitate Phase...");
         PrecipitatePhaseWidget* w = new PrecipitatePhaseWidget(this);
         phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
-      if(phaseTypes->getValue(phase) == SIMPL::PhaseType::PrimaryPhase)
+      if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::PrimaryPhase))
       {
         progress.setLabelText("Opening Primary Phase...");
         PrimaryPhaseWidget* w = new PrimaryPhaseWidget(this);
         phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
-      if(phaseTypes->getValue(phase) == SIMPL::PhaseType::TransformationPhase)
+      if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::TransformationPhase))
       {
         progress.setLabelText("Opening Transformation Phase...");
         TransformationPhaseWidget* w = new TransformationPhaseWidget(this);
         phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
       else
       {
@@ -330,15 +336,15 @@ void StatsGeneratorWidget::on_addPhase_clicked()
   int r = dialog.exec();
   if(r == QDialog::Accepted)
   {
-    if(dialog.getPhaseType() == SIMPL::PhaseType::PrimaryPhase)
+    if(dialog.getPhaseType() == PhaseType::Type::PrimaryPhase)
     {
       PrimaryPhaseWidget* ppw = new PrimaryPhaseWidget();
       phaseTabs->addTab(ppw, "Primary");
 
-      connect(ppw, SIGNAL(phaseParametersChanged()), this, SIGNAL(parametersChanged()));
+      connect(ppw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
       ppw->setPhaseIndex(phaseTabs->count());
-      ppw->setPhaseType(SIMPL::PhaseType::PrimaryPhase);
+      ppw->setPhaseType(PhaseType::Type::PrimaryPhase);
       ppw->setCrystalStructure(dialog.getCrystalStructure());
       ppw->setPhaseFraction(dialog.getPhaseFraction());
       ppw->setPhaseType(dialog.getPhaseType());
@@ -349,15 +355,15 @@ void StatsGeneratorWidget::on_addPhase_clicked()
       ppw->updatePlots();
       setWindowModified(true);
     }
-    else if(dialog.getPhaseType() == SIMPL::PhaseType::PrecipitatePhase)
+    else if(dialog.getPhaseType() == PhaseType::Type::PrecipitatePhase)
     {
       PrecipitatePhaseWidget* ppw = new PrecipitatePhaseWidget();
       phaseTabs->addTab(ppw, "Precipitate");
 
-      connect(ppw, SIGNAL(phaseParametersChanged()), this, SIGNAL(parametersChanged()));
+      connect(ppw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
       ppw->setPhaseIndex(phaseTabs->count());
-      ppw->setPhaseType(SIMPL::PhaseType::PrecipitatePhase);
+      ppw->setPhaseType(PhaseType::Type::PrecipitatePhase);
       ppw->setCrystalStructure(dialog.getCrystalStructure());
       ppw->setPhaseFraction(dialog.getPhaseFraction());
       ppw->setPhaseType(dialog.getPhaseType());
@@ -368,15 +374,15 @@ void StatsGeneratorWidget::on_addPhase_clicked()
       ppw->updatePlots();
       setWindowModified(true);
     }
-    else if(dialog.getPhaseType() == SIMPL::PhaseType::TransformationPhase)
+    else if(dialog.getPhaseType() == PhaseType::Type::TransformationPhase)
     {
       TransformationPhaseWidget* tpw = new TransformationPhaseWidget();
       phaseTabs->addTab(tpw, "Transformation");
 
-      connect(tpw, SIGNAL(phaseParametersChanged()), this, SIGNAL(parametersChanged()));
+      connect(tpw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
       tpw->setPhaseIndex(phaseTabs->count());
-      tpw->setPhaseType(SIMPL::PhaseType::TransformationPhase);
+      tpw->setPhaseType(PhaseType::Type::TransformationPhase);
       tpw->setCrystalStructure(dialog.getCrystalStructure());
       tpw->setPhaseFraction(dialog.getPhaseFraction());
       tpw->setPhaseType(dialog.getPhaseType());
@@ -386,15 +392,15 @@ void StatsGeneratorWidget::on_addPhase_clicked()
       tpw->updatePlots();
       setWindowModified(true);
     }
-    else if(dialog.getPhaseType() == SIMPL::PhaseType::MatrixPhase)
+    else if(dialog.getPhaseType() == PhaseType::Type::MatrixPhase)
     {
       MatrixPhaseWidget* mpw = new MatrixPhaseWidget();
       phaseTabs->addTab(mpw, "Matrix");
 
-      connect(mpw, SIGNAL(phaseParametersChanged()), this, SIGNAL(parametersChanged()));
+      connect(mpw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
       mpw->setPhaseIndex(phaseTabs->count());
-      mpw->setPhaseType(SIMPL::PhaseType::MatrixPhase);
+      mpw->setPhaseType(PhaseType::Type::MatrixPhase);
       mpw->setCrystalStructure(dialog.getCrystalStructure());
       mpw->setPhaseFraction(dialog.getPhaseFraction());
       mpw->setPhaseType(dialog.getPhaseType());
@@ -403,15 +409,15 @@ void StatsGeneratorWidget::on_addPhase_clicked()
       mpw->setObjectName(cName);
       setWindowModified(true);
     }
-    else if(dialog.getPhaseType() == SIMPL::PhaseType::BoundaryPhase)
+    else if(dialog.getPhaseType() == PhaseType::Type::BoundaryPhase)
     {
       BoundaryPhaseWidget* bpw = new BoundaryPhaseWidget();
       phaseTabs->addTab(bpw, "Boundary");
 
-      connect(bpw, SIGNAL(phaseParametersChanged()), this, SIGNAL(parametersChanged()));
+      connect(bpw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
       bpw->setPhaseIndex(phaseTabs->count());
-      bpw->setPhaseType(SIMPL::PhaseType::BoundaryPhase);
+      bpw->setPhaseType(PhaseType::Type::BoundaryPhase);
       bpw->setCrystalStructure(dialog.getCrystalStructure());
       bpw->setPhaseFraction(dialog.getPhaseFraction());
       bpw->setPhaseType(dialog.getPhaseType());
@@ -456,11 +462,11 @@ void StatsGeneratorWidget::on_editPhase_clicked()
   QString phaseName = sgwidget->getPhaseName();
   dialog.setPhaseName(phaseName);
 
-  if(dialog.getPhaseType() == SIMPL::PhaseType::PrimaryPhase)
+  if(dialog.getPhaseType() == PhaseType::Type::PrimaryPhase)
   {
     //    PrimaryPhaseWidget* ppw = qobject_cast<PrimaryPhaseWidget*>(sgwidget);
   }
-  else if(dialog.getPhaseType() == SIMPL::PhaseType::PrecipitatePhase)
+  else if(dialog.getPhaseType() == PhaseType::Type::PrecipitatePhase)
   {
     PrecipitatePhaseWidget* ppw = qobject_cast<PrecipitatePhaseWidget*>(sgwidget);
     if(ppw)
@@ -468,7 +474,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       dialog.setPptFraction(ppw->getPptFraction());
     }
   }
-  else if(dialog.getPhaseType() == SIMPL::PhaseType::TransformationPhase)
+  else if(dialog.getPhaseType() == PhaseType::Type::TransformationPhase)
   {
     TransformationPhaseWidget* tpw = qobject_cast<TransformationPhaseWidget*>(sgwidget);
     if(tpw)
@@ -476,18 +482,18 @@ void StatsGeneratorWidget::on_editPhase_clicked()
      // dialog.setParentPhase(tpw->getParentPhase());
     }
   }
-  else if(dialog.getPhaseType() == SIMPL::PhaseType::MatrixPhase)
+  else if(dialog.getPhaseType() == PhaseType::Type::MatrixPhase)
   {
     //    MatrixPhaseWidget* mpw = qobject_cast<MatrixPhaseWidget*>(sgwidget);
   }
-  else if(dialog.getPhaseType() == SIMPL::PhaseType::BoundaryPhase)
+  else if(dialog.getPhaseType() == PhaseType::Type::BoundaryPhase)
   {
     //    BoundaryPhaseWidget* bpw = qobject_cast<BoundaryPhaseWidget*>(sgwidget);
   }
   int r = dialog.exec();
   if(r == QDialog::Accepted)
   {
-    if(dialog.getPhaseType() == SIMPL::PhaseType::PrimaryPhase)
+    if(dialog.getPhaseType() == PhaseType::Type::PrimaryPhase)
     {
       PrimaryPhaseWidget* ppw = qobject_cast<PrimaryPhaseWidget*>(sgwidget);
       ppw->setCrystalStructure(dialog.getCrystalStructure());
@@ -498,7 +504,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       setWindowModified(true);
       ppw->updatePlots();
     }
-    if(dialog.getPhaseType() == SIMPL::PhaseType::PrecipitatePhase)
+    if(dialog.getPhaseType() == PhaseType::Type::PrecipitatePhase)
     {
       PrecipitatePhaseWidget* ppw = qobject_cast<PrecipitatePhaseWidget*>(sgwidget);
       ppw->setCrystalStructure(dialog.getCrystalStructure());
@@ -510,7 +516,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       setWindowModified(true);
       ppw->updatePlots();
     }
-    if(dialog.getPhaseType() == SIMPL::PhaseType::TransformationPhase)
+    if(dialog.getPhaseType() == PhaseType::Type::TransformationPhase)
     {
       TransformationPhaseWidget* tpw = qobject_cast<TransformationPhaseWidget*>(sgwidget);
       tpw->setCrystalStructure(dialog.getCrystalStructure());
@@ -522,7 +528,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       setWindowModified(true);
       tpw->updatePlots();
     }
-    if(dialog.getPhaseType() == SIMPL::PhaseType::MatrixPhase)
+    if(dialog.getPhaseType() == PhaseType::Type::MatrixPhase)
     {
       MatrixPhaseWidget* mpw = qobject_cast<MatrixPhaseWidget*>(sgwidget);
       mpw->setCrystalStructure(dialog.getCrystalStructure());
@@ -532,7 +538,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       QString cName = mpw->getComboString();
       setWindowModified(true);
     }
-    if(dialog.getPhaseType() == SIMPL::PhaseType::BoundaryPhase)
+    if(dialog.getPhaseType() == PhaseType::Type::BoundaryPhase)
     {
       BoundaryPhaseWidget* bpw = qobject_cast<BoundaryPhaseWidget*>(sgwidget);
       bpw->setCrystalStructure(dialog.getCrystalStructure());
@@ -647,7 +653,7 @@ DataContainerArray::Pointer StatsGeneratorWidget::generateDataContainerArray()
   dca->addDataContainer(m);
 
   QVector<size_t> tDims(1, nPhases);
-  AttributeMatrix::Pointer cellEnsembleAttrMat = AttributeMatrix::New(tDims, SIMPL::Defaults::CellEnsembleAttributeMatrixName, SIMPL::AttributeMatrixType::CellEnsemble);
+  AttributeMatrix::Pointer cellEnsembleAttrMat = AttributeMatrix::New(tDims, SIMPL::Defaults::CellEnsembleAttributeMatrixName, AttributeMatrix::Type::CellEnsemble);
   m->addAttributeMatrix(SIMPL::Defaults::CellEnsembleAttributeMatrixName, cellEnsembleAttrMat);
 
   StatsDataArray::Pointer statsDataArray = StatsDataArray::New();
@@ -660,11 +666,11 @@ DataContainerArray::Pointer StatsGeneratorWidget::generateDataContainerArray()
   cellEnsembleAttrMat->addAttributeArray(SIMPL::EnsembleData::CrystalStructures, crystalStructures);
 
   UInt32ArrayType::Pointer phaseTypes = UInt32ArrayType::CreateArray(tDims, cDims, SIMPL::EnsembleData::PhaseTypes);
-  phaseTypes->setValue(0, SIMPL::PhaseType::UnknownPhaseType);
+  phaseTypes->setValue(0, static_cast<PhaseType::EnumType>(PhaseType::Type::UnknownPhaseType));
   cellEnsembleAttrMat->addAttributeArray(SIMPL::EnsembleData::PhaseTypes, phaseTypes);
 
   StringDataArray::Pointer phaseNames = StringDataArray::CreateArray(tDims[0], SIMPL::EnsembleData::PhaseName);
-  phaseNames->setValue(0, SIMPL::PhaseType::UnknownPhase);
+  phaseNames->setValue(0, PhaseType::UnknownPhaseTypeStr());
   cellEnsembleAttrMat->addAttributeArray(SIMPL::EnsembleData::PhaseName, phaseNames);
 
   double phaseFractionTotal = 0.0;
@@ -679,27 +685,27 @@ DataContainerArray::Pointer StatsGeneratorWidget::generateDataContainerArray()
   {
     StatsGenWidget* sgwidget = qobject_cast<StatsGenWidget*>(phaseTabs->widget(i));
     sgwidget->setTotalPhaseFraction(static_cast<float>(phaseFractionTotal));
-    if(sgwidget->getPhaseType() == SIMPL::PhaseType::PrimaryPhase)
+    if(sgwidget->getPhaseType() == PhaseType::Type::PrimaryPhase)
     {
       PrimaryStatsData::Pointer data = PrimaryStatsData::New();
       statsDataArray->setStatsData(i + 1, data);
     }
-    if(sgwidget->getPhaseType() == SIMPL::PhaseType::PrecipitatePhase)
+    if(sgwidget->getPhaseType() == PhaseType::Type::PrecipitatePhase)
     {
       PrecipitateStatsData::Pointer data = PrecipitateStatsData::New();
       statsDataArray->setStatsData(i + 1, data);
     }
-    if(sgwidget->getPhaseType() == SIMPL::PhaseType::TransformationPhase)
+    if(sgwidget->getPhaseType() == PhaseType::Type::TransformationPhase)
     {
       TransformationStatsData::Pointer data = TransformationStatsData::New();
       statsDataArray->setStatsData(i + 1, data);
     }
-    if(sgwidget->getPhaseType() == SIMPL::PhaseType::MatrixPhase)
+    if(sgwidget->getPhaseType() == PhaseType::Type::MatrixPhase)
     {
       MatrixStatsData::Pointer data = MatrixStatsData::New();
       statsDataArray->setStatsData(i + 1, data);
     }
-    if(sgwidget->getPhaseType() == SIMPL::PhaseType::BoundaryPhase)
+    if(sgwidget->getPhaseType() == PhaseType::Type::BoundaryPhase)
     {
       BoundaryStatsData::Pointer data = BoundaryStatsData::New();
       statsDataArray->setStatsData(i + 1, data);
@@ -833,7 +839,7 @@ void StatsGeneratorWidget::on_openStatsFile_clicked()
   DataContainer::Pointer m = DataContainer::New(SIMPL::Defaults::StatsGenerator);
   dca->addDataContainer(m);
   QVector<size_t> tDims(1, 0);
-  AttributeMatrix::Pointer cellEnsembleAttrMat = AttributeMatrix::New(tDims, SIMPL::Defaults::CellEnsembleAttributeMatrixName, SIMPL::AttributeMatrixType::CellEnsemble);
+  AttributeMatrix::Pointer cellEnsembleAttrMat = AttributeMatrix::New(tDims, SIMPL::Defaults::CellEnsembleAttributeMatrixName, AttributeMatrix::Type::CellEnsemble);
   m->addAttributeMatrix(SIMPL::Defaults::CellEnsembleAttributeMatrixName, cellEnsembleAttrMat);
 
   hid_t fileId = QH5Utilities::openFile(h5file, true); // Open the file Read Only
@@ -889,7 +895,7 @@ void StatsGeneratorWidget::on_openStatsFile_clicked()
   progress.setWindowModality(Qt::WindowModal);
 
   IDataArray::Pointer iDataArray = cellEnsembleAttrMat->getAttributeArray(SIMPL::EnsembleData::PhaseTypes);
-  unsigned int* phaseTypes = std::dynamic_pointer_cast<UInt32ArrayType>(iDataArray)->getPointer(0);
+  PhaseType::EnumType* phaseTypes = std::dynamic_pointer_cast<UInt32ArrayType>(iDataArray)->getPointer(0);
 
   // We should iterate on all the phases here to start setting data and creating
   // all of the StatsGenPhase Objects
@@ -902,35 +908,35 @@ void StatsGeneratorWidget::on_openStatsFile_clicked()
       return;
     }
 
-    if(phaseTypes[phase] == SIMPL::PhaseType::BoundaryPhase)
+    if (phaseTypes[phase] == static_cast<PhaseType::EnumType>(PhaseType::Type::BoundaryPhase))
     {
       progress.setLabelText("Opening Boundaray Phase...");
       BoundaryPhaseWidget* w = new BoundaryPhaseWidget(this);
       phaseTabs->addTab(w, w->getTabTitle());
       w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
     }
-    else if(phaseTypes[phase] == SIMPL::PhaseType::MatrixPhase)
+    else if (phaseTypes[phase] == static_cast<PhaseType::EnumType>(PhaseType::Type::MatrixPhase))
     {
       progress.setLabelText("Opening Matrix Phase...");
       MatrixPhaseWidget* w = new MatrixPhaseWidget(this);
       phaseTabs->addTab(w, w->getTabTitle());
       w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
     }
-    if(phaseTypes[phase] == SIMPL::PhaseType::PrecipitatePhase)
+    if (phaseTypes[phase] == static_cast<PhaseType::EnumType>(PhaseType::Type::PrecipitatePhase))
     {
       progress.setLabelText("Opening Precipitate Phase...");
       PrecipitatePhaseWidget* w = new PrecipitatePhaseWidget(this);
       phaseTabs->addTab(w, w->getTabTitle());
       w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
     }
-    if(phaseTypes[phase] == SIMPL::PhaseType::PrimaryPhase)
+    if (phaseTypes[phase] == static_cast<PhaseType::EnumType>(PhaseType::Type::PrimaryPhase))
     {
       progress.setLabelText("Opening Primary Phase...");
       PrimaryPhaseWidget* w = new PrimaryPhaseWidget(this);
       phaseTabs->addTab(w, w->getTabTitle());
       w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
     }
-    if(phaseTypes[phase] == SIMPL::PhaseType::TransformationPhase)
+    if (phaseTypes[phase] == static_cast<PhaseType::EnumType>(PhaseType::Type::TransformationPhase))
     {
       progress.setLabelText("Opening Transformation Phase...");
       TransformationPhaseWidget* w = new TransformationPhaseWidget(this);

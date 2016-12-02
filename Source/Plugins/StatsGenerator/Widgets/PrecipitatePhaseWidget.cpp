@@ -48,11 +48,12 @@
 // Needed for AxisAngle_t and Crystal Symmetry constants
 #include "EbsdLib/EbsdConstants.h"
 
+#include "SIMPLib/SIMPLib.h"
 #include "SIMPLib/Common/AbstractFilter.h"
 #include "SIMPLib/Common/Constants.h"
 #include "SIMPLib/DataArrays/StatsDataArray.h"
+#include "SIMPLib/DataArrays/StringDataArray.hpp"
 #include "SIMPLib/Math/SIMPLibMath.h"
-#include "SIMPLib/SIMPLib.h"
 #include "SIMPLib/StatsData/PrimaryStatsData.h"
 #include "SIMPLib/StatsData/StatsData.h"
 
@@ -378,7 +379,11 @@ int PrecipitatePhaseWidget::gatherStatsData(AttributeMatrix::Pointer attrMat, bo
   unsigned int* phaseTypes = std::dynamic_pointer_cast<UInt32ArrayType>(iDataArray)->getPointer(0);
 
   crystalStructures[getPhaseIndex()] = getCrystalStructure();
-  phaseTypes[getPhaseIndex()] = getPhaseType();
+  phaseTypes[getPhaseIndex()] = static_cast<PhaseType::EnumType>(getPhaseType());
+
+  iDataArray = attrMat->getAttributeArray(SIMPL::EnsembleData::PhaseName);
+  StringDataArray::Pointer phaseNameArray = std::dynamic_pointer_cast<StringDataArray>(iDataArray);
+  phaseNameArray->setValue(getPhaseIndex(), getPhaseName());
 
   StatsDataArray* statsDataArray = StatsDataArray::SafeObjectDownCast<IDataArray*, StatsDataArray*>(attrMat->getAttributeArray(SIMPL::EnsembleData::Statistics).get());
   if(nullptr != statsDataArray)
@@ -427,9 +432,9 @@ int PrecipitatePhaseWidget::gatherStatsData(AttributeMatrix::Pointer attrMat, bo
       precipitateStatsData->setRadialDistFunction(data);
     }
 
-    getODFWidgetWidget()->getOrientationData(precipitateStatsData, SIMPL::PhaseType::PrecipitatePhase, preflight);
+    getODFWidgetWidget()->getOrientationData(precipitateStatsData, PhaseType::Type::PrecipitatePhase, preflight);
 
-    err = getAxisODFWidget()->getOrientationData(precipitateStatsData, SIMPL::PhaseType::PrecipitatePhase, preflight);
+    err = getAxisODFWidget()->getOrientationData(precipitateStatsData, PhaseType::Type::PrecipitatePhase, preflight);
   }
   return retErr;
 }
@@ -448,7 +453,7 @@ void PrecipitatePhaseWidget::extractStatsData(AttributeMatrix::Pointer attrMat, 
 
   iDataArray = attrMat->getAttributeArray(SIMPL::EnsembleData::PhaseTypes);
   attributeArray = std::dynamic_pointer_cast<UInt32ArrayType>(iDataArray)->getPointer(0);
-  setPhaseType(attributeArray[index]);
+  setPhaseType(static_cast<PhaseType::Type>(attributeArray[index]));
 
   iDataArray = attrMat->getAttributeArray(SIMPL::EnsembleData::Statistics);
   StatsDataArray* statsDataArray = StatsDataArray::SafeObjectDownCast<IDataArray*, StatsDataArray*>(iDataArray.get());
@@ -459,8 +464,13 @@ void PrecipitatePhaseWidget::extractStatsData(AttributeMatrix::Pointer attrMat, 
   StatsData::Pointer statsData = statsDataArray->getStatsData(index);
   PrecipitateStatsData* precipitateStatsData = PrecipitateStatsData::SafePointerDownCast(statsData.get());
 
-  setPhaseName(statsData->getName());
-  setPhaseFraction(precipitateStatsData->getPhaseFraction());
+
+  QString phaseName = statsData->getName();
+  if(phaseName.isEmpty())
+  {
+    phaseName = QString("Precipitate Phase (%1)").arg(index);
+  }
+  setPhaseName(phaseName);  setPhaseFraction(precipitateStatsData->getPhaseFraction());
   m_PptFraction = precipitateStatsData->getPrecipBoundaryFraction();
 
   getFeatureSizeWidget()->setCrystalStructure(getCrystalStructure());
@@ -499,13 +509,13 @@ void PrecipitatePhaseWidget::extractStatsData(AttributeMatrix::Pointer attrMat, 
   getCOverAPlotWidget()->extractStatsData(index, qbins, precipitateStatsData->getFeatureSize_COverA());
   getCOverAPlotWidget()->setSizeDistributionValues(mu, sigma, minCutOff, maxCutOff, binStepSize);
 
-  m_RdfPlot->extractStatsData(index, precipitateStatsData, SIMPL::PhaseType::PrecipitatePhase);
+  m_RdfPlot->extractStatsData(index, precipitateStatsData, PhaseType::Type::PrecipitatePhase);
 
   // Set the ODF Data
-  getODFWidgetWidget()->extractStatsData(index, precipitateStatsData, SIMPL::PhaseType::PrecipitatePhase);
+  getODFWidgetWidget()->extractStatsData(index, precipitateStatsData, PhaseType::Type::PrecipitatePhase);
 
   // Set the Axis ODF Data
-  getAxisODFWidget()->extractStatsData(index, precipitateStatsData, SIMPL::PhaseType::PrecipitatePhase);
+  getAxisODFWidget()->extractStatsData(index, precipitateStatsData, PhaseType::Type::PrecipitatePhase);
 
   // Enable all the tabs
   setTabsPlotTabsEnabled(true);

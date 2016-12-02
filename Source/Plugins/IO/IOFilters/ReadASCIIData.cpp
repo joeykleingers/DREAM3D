@@ -44,7 +44,7 @@ void ReadASCIIData::setupFilterParameters()
 {
   FilterParameterVector parameters;
 
-  parameters.push_back(ReadASCIIDataFilterParameter::New("ASCII Wizard Data", "WizardData", "", FilterParameter::Parameter));
+  parameters.push_back(ReadASCIIDataFilterParameter::New("ASCII Wizard Data", "WizardData", "WizardData", FilterParameter::Parameter));
 
   setFilterParameters(parameters);
 }
@@ -74,6 +74,7 @@ void ReadASCIIData::readFilterParameters(AbstractFilterParametersReader* reader,
   data.dataTypes = reader->readStringList(prefix + "DataTypes", QStringList());
   data.inputFilePath = reader->readString(prefix + "InputFilePath", "");
   data.numberOfLines = reader->readValue(prefix + "NumberOfLines", -1);
+  data.automaticAM = reader->readValue(prefix + "AutomaticAM", false);
 
   QVector<uint64_t> tmpVec;
   QVector<size_t> tDims;
@@ -305,7 +306,9 @@ void ReadASCIIData::dataCheck()
     else
     {
       DataContainer::Pointer dc = getDataContainerArray()->getPrereqDataContainer(this, selectedPath.getDataContainerName());
-      dc->createNonPrereqAttributeMatrix(this, selectedPath.getAttributeMatrixName(), tDims, SIMPL::AttributeMatrixType::Generic);
+      if(nullptr != dc.get()) {
+        dc->createNonPrereqAttributeMatrix(this, selectedPath.getAttributeMatrixName(), tDims, AttributeMatrix::Type::Generic);
+      }
     }
   }
 
@@ -562,7 +565,8 @@ AbstractFilter::Pointer ReadASCIIData::newFilterInstance(bool copyFilterParamete
   ReadASCIIData::Pointer filter = ReadASCIIData::New();
   if(true == copyFilterParameters)
   {
-    copyFilterParameterInstanceVariables(filter.get());
+    // copyFilterParameterInstanceVariables(filter.get());
+    filter->setWizardData(getWizardData());
   }
   return filter;
 }
