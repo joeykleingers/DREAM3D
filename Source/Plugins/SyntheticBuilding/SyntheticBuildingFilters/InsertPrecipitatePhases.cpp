@@ -761,7 +761,7 @@ void InsertPrecipitatePhases::place_precipitates(Int32ArrayType::Pointer exclusi
 
   for(size_t i = 1; i < numensembles; ++i)
   {
-    if(m_PhaseTypes[i] == static_cast<PhaseType::EnumType>(PhaseType::Type::PrecipitatePhase))
+    if(m_PhaseTypes[i] == static_cast<PhaseType::EnumType>(PhaseType::Type::Precipitate))
     {
       PrecipitateStatsData* pp = PrecipitateStatsData::SafePointerDownCast(statsDataArray[i].get());
       if(nullptr == pp)
@@ -888,7 +888,7 @@ void InsertPrecipitatePhases::place_precipitates(Int32ArrayType::Pointer exclusi
   {
     for(size_t i = 1; i < numensembles; ++i)
     {
-      if(m_PhaseTypes[i] == static_cast<PhaseType::EnumType>(PhaseType::Type::PrecipitatePhase))
+      if(m_PhaseTypes[i] == static_cast<PhaseType::EnumType>(PhaseType::Type::Precipitate))
       {
         PrecipitateStatsData* pp = PrecipitateStatsData::SafePointerDownCast(statsDataArray[i].get());
         RdfData::Pointer rdfTarget = pp->getRadialDistFunction();
@@ -1412,7 +1412,7 @@ void InsertPrecipitatePhases::place_precipitates(Int32ArrayType::Pointer exclusi
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void InsertPrecipitatePhases::generate_precipitate(int32_t phase, Precip_t* precip, ShapeType::Type shapeclass, SpaceGroupOps::Pointer OrthoOps)
+void InsertPrecipitatePhases::generate_precipitate(int32_t phase, Precip_t* precip, ShapeType::Type shapeclass, LaueOps::Pointer OrthoOps)
 {
   SIMPL_RANDOMNG_NEW_SEEDED(m_Seed)
 

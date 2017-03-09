@@ -49,13 +49,13 @@
 #include "SIMPLib/Common/Constants.h"
 #include "SIMPLib/FilterParameters/AbstractFilterParametersReader.h"
 #include "SIMPLib/FilterParameters/DataArraySelectionFilterParameter.h"
-#include "SIMPLib/FilterParameters/DoubleFilterParameter.h"
+#include "SIMPLib/FilterParameters/FloatFilterParameter.h"
 #include "SIMPLib/FilterParameters/SeparatorFilterParameter.h"
 #include "SIMPLib/FilterParameters/StringFilterParameter.h"
 #include "SIMPLib/Geometry/ImageGeom.h"
 #include "SIMPLib/Math/GeometryMath.h"
 
-#include "OrientationLib/SpaceGroupOps/SpaceGroupOps.h"
+#include "OrientationLib/LaueOps/LaueOps.h"
 
 #include "EbsdLib/EbsdConstants.h"
 
@@ -265,9 +265,9 @@ void IdentifyMicroTextureRegions::setupFilterParameters()
 {
   FilterParameterVector parameters;
 
-  parameters.push_back(SIMPL_NEW_DOUBLE_FP("C-Axis Alignment Tolerance (Degrees)", CAxisTolerance, FilterParameter::Parameter, IdentifyMicroTextureRegions));
-  parameters.push_back(SIMPL_NEW_DOUBLE_FP("Minimum MicroTextured Region Size (Diameter)", MinMTRSize, FilterParameter::Parameter, IdentifyMicroTextureRegions));
-  parameters.push_back(SIMPL_NEW_DOUBLE_FP("Minimum Volume Fraction in MTR", MinVolFrac, FilterParameter::Parameter, IdentifyMicroTextureRegions));
+  parameters.push_back(SIMPL_NEW_FLOAT_FP("C-Axis Alignment Tolerance (Degrees)", CAxisTolerance, FilterParameter::Parameter, IdentifyMicroTextureRegions));
+  parameters.push_back(SIMPL_NEW_FLOAT_FP("Minimum MicroTextured Region Size (Diameter)", MinMTRSize, FilterParameter::Parameter, IdentifyMicroTextureRegions));
+  parameters.push_back(SIMPL_NEW_FLOAT_FP("Minimum Volume Fraction in MTR", MinVolFrac, FilterParameter::Parameter, IdentifyMicroTextureRegions));
 
   {
     DataArraySelectionFilterParameter::RequirementType req;

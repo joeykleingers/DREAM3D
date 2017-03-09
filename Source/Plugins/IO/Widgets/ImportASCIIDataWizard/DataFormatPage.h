@@ -38,6 +38,7 @@
 #define _dataformatpage_h_
 
 #include <QtWidgets/QWizardPage>
+#include <QtWidgets/QButtonGroup>
 
 #include "SIMPLib/DataContainers/DataContainerArray.h"
 
@@ -143,12 +144,47 @@ class DataFormatPage : public AbstractWizardPage, private Ui::DataFormatPage
      */
     void setAutomaticAttrMatrixName(const DataArrayPath &path);
 
-
     /**
      * @brief getAMName
      * @return
      */
     QString getAutomaticAttrMatrixName();
+
+    /**
+     * @brief setAttributeMatrixType
+     * @param t
+     */
+    void setAttributeMatrixType(int t);
+
+    /**
+     * @brief getAttributeMatrixType
+     * @return
+     */
+    int getAttributeMatrixType();
+
+    /**
+     * @brief setUseDefaultHeaders
+     * @param ok
+     */
+    void setUseDefaultHeaders(bool ok);
+
+    /**
+     * @brief setUseCustomHeaders
+     * @param value
+     */
+    void setUseCustomHeaders(bool value);
+
+    /**
+     * @brief setHeaderLine
+     * @param line
+     */
+    void setHeaderLine(int line);
+
+    /**
+     * @brief setEditSettings
+     * @param value
+     */
+    void setEditSettings(bool value);
 
     /**
      * @brief eventFilter
@@ -206,32 +242,49 @@ class DataFormatPage : public AbstractWizardPage, private Ui::DataFormatPage
      */
     QPoint adjustedMenuPosition(QPushButton* pushButton);
 
-  protected slots:
+    void createDCSelectionMenu();
+    void createAMSelectionMenu();
+
+
+  private slots:
     void on_startRowSpin_valueChanged(int i);
     void on_hasHeadersRadio_toggled(bool checked);
     void on_doesNotHaveHeadersRadio_toggled(bool checked);
     void on_useDefaultHeaders_toggled(bool checked);
-    void on_amAutomatically_stateChanged(int state);
-    void on_selectedAMBtn_pressed();
-    void on_selectedDCBtn_pressed();
+
     void on_headersIndexLineEdit_textChanged(const QString &text);
     void on_editHeadersBtn_clicked();
     void on_dataTypeRadio_clicked();
     void on_skipRadio_clicked();
     void on_dataTypeCB_currentTextChanged(const QString &text);
 
+    void on_amName_returnPressed();
+
     void updateSelection(const QItemSelection &selected, const QItemSelection &deselected);
     bool checkTupleDimensions(QVector<size_t> tupleDims);
 
+    void on_createAMRadio_toggled(bool b);
+    void on_useAMRadio_toggled(bool b);
+
   private:
-    int                                             m_NumLines;
-    EditHeadersDialog*                              m_EditHeadersDialog;
+    int                                             m_NumLines = -1;
+    EditHeadersDialog*                              m_EditHeadersDialog = nullptr;
     DataContainerArray::Pointer                     m_Dca;
 
-    QSignalMapper*                                  m_AMMenuMapper;
-    QSignalMapper*                                  m_DCMenuMapper;
+    QSignalMapper*                                  m_AMMenuMapper = nullptr;
+    QSignalMapper*                                  m_DCMenuMapper = nullptr;
 
     QPointer<QtSFaderWidget>                        m_FaderWidget;
+    bool                                            m_EditSettings = false;
+
+    QMenu*                                          m_DCMenuPtr = nullptr;
+    bool                                            m_OwnsDCMenuPtr = false;
+
+    QMenu*                                          m_AttrMatMenuPtr = nullptr;
+    bool                                            m_OwnsAttrMatMenuPtr = false;
+
+    bool                                            m_TupleDimsHasErrors = false;
+    bool                                            m_HeadersHasErrors = false;
 
     bool validateHeaders(QVector<QString> headers);
     bool validateTupleDimensions(QVector<size_t> tupleDims);

@@ -118,17 +118,17 @@ StatsGenODFWidget::~StatsGenODFWidget()
 void StatsGenODFWidget::extractStatsData(int index, StatsData* statsData, PhaseType::Type phaseType)
 {
   VectorOfFloatArray arrays;
-  if(phaseType == PhaseType::Type::PrimaryPhase)
+  if(phaseType == PhaseType::Type::Primary)
   {
     PrimaryStatsData* pp = PrimaryStatsData::SafePointerDownCast(statsData);
     arrays = pp->getODF_Weights();
   }
-  if(phaseType == PhaseType::Type::PrecipitatePhase)
+  if(phaseType == PhaseType::Type::Precipitate)
   {
     PrecipitateStatsData* pp = PrecipitateStatsData::SafePointerDownCast(statsData);
     arrays = pp->getODF_Weights();
   }
-  if(phaseType == PhaseType::Type::TransformationPhase)
+  if(phaseType == PhaseType::Type::Transformation)
   {
     TransformationStatsData* tp = TransformationStatsData::SafePointerDownCast(statsData);
     arrays = tp->getODF_Weights();
@@ -205,9 +205,9 @@ int StatsGenODFWidget::getOrientationData(StatsData* statsData, PhaseType::Type 
   // Convert from Degrees to Radians
   for(QVector<float>::size_type i = 0; i < e1s.size(); i++)
   {
-    e1s[i] = static_cast<float>(e1s[i] * M_PI / 180.0);
-    e2s[i] = static_cast<float>(e2s[i] * M_PI / 180.0);
-    e3s[i] = static_cast<float>(e3s[i] * M_PI / 180.0);
+    e1s[i] = static_cast<float>(e1s[i] * SIMPLib::Constants::k_PiOver180);
+    e2s[i] = static_cast<float>(e2s[i] * SIMPLib::Constants::k_PiOver180);
+    e3s[i] = static_cast<float>(e3s[i] * SIMPLib::Constants::k_PiOver180);
   }
 
   StatsGeneratorUtilities::GenerateODFBinData(statsData, phaseType, m_CrystalStructure, e1s, e2s, e3s, weights, sigmas, !preflight);

@@ -70,6 +70,7 @@
 EMMPMFilter::EMMPMFilter()
 : AbstractFilter(),
   m_InputDataArrayPath(SIMPL::Defaults::ImageDataContainerName, SIMPL::Defaults::CellAttributeMatrixName, SIMPL::CellData::ImageData),
+  m_UseOneBasedValues(true),
   m_NumClasses(2),
   m_ExchangeEnergy(0.5f),
   m_HistogramLoops(5),
@@ -127,6 +128,8 @@ void EMMPMFilter::setupFilterParameters()
     parameter->setFilter(this);
     parameters.push_back(parameter);
   }
+
+  parameters.push_back(SIMPL_NEW_BOOL_FP("Use 1-Based Values", UseOneBasedValues, FilterParameter::Parameter, EMMPMFilter));
 
   {
     QStringList linkedProps;
@@ -229,13 +232,13 @@ void EMMPMFilter::dataCheck()
 
   if(getNumClasses() > 15)
   {
-    setErrorCondition(-62000);
+    setErrorCondition(-89100);
     QString ss = QObject::tr("The maximum number of classes is 15");
     notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
   }
   if(getNumClasses() < 2)
   {
-    setErrorCondition(-62001);
+    setErrorCondition(-89101);
     QString ss = QObject::tr("The minimum number of classes is 2");
     notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
   }
@@ -270,6 +273,17 @@ void EMMPMFilter::execute()
 
   // This is the routine that sets up the EM/MPM to segment the image
   segment(getEmmpmInitType());
+
+  if (m_UseOneBasedValues == true && m_OutputImagePtr.lock().get() != nullptr)
+  {
+    UInt8ArrayType::Pointer outputArray =  m_OutputImagePtr.lock();
+    for (int i=0; i<outputArray->getNumberOfTuples(); i++)
+    {
+      uint8_t curVal = outputArray->getValue(i);
+      uint8_t newVal = curVal + 1;
+      outputArray->setValue(i, newVal);
+    }
+  }
 
   /* Let the GUI know we are done with this filter */
   notifyStatusMessage(getHumanLabel(), "Complete");

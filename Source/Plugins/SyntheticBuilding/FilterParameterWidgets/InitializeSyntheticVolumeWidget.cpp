@@ -448,7 +448,7 @@ int InitializeSyntheticVolumeWidget::estimate_numFeatures(int xpoints, int ypoin
   int gid = 1;
 
   totalvol = (xpoints * xres) * (ypoints * yres) * (zpoints * zres);
-  if(totalvol == 0.0)
+  if(totalvol == 0.0f)
   {
     return -1;
   }
@@ -486,7 +486,7 @@ int InitializeSyntheticVolumeWidget::estimate_numFeatures(int xpoints, int ypoin
   // find which phases are primary phases
   for (size_t i = 1; i < phaseType->getNumberOfTuples(); ++i)
   {
-    if(phaseType->GetValue(i) == SIMPL::PhaseType::PrimaryPhase)
+    if(phaseType->GetValue(i) == SIMPL::PhaseType::Primary)
     {
       PrimaryStatsData* pp = PrimaryStatsData::SafePointerDownCast(statsDataArray[i].get());
       primaryphases.push_back(i);
