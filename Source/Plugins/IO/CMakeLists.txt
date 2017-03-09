@@ -100,14 +100,11 @@ include_directories( ${SIMPLProj_SOURCE_DIR}/Source/SVWidgetsLib/Widgets)
 include_directories( ${SIMPLProj_SOURCE_DIR}/Source/SVWidgetsLib/QtSupport)
 include_directories( ${HDF5_INCLUDE_DIR} )
 include_directories( ${PROJECT_CODE_DIR} )
-<<<<<<< HEAD
 include_directories( ${SVWidgetsLib_SOURCE_DIR}/QtSupport )
 
 
 get_filename_component(PLUGINS_SOURCE_DIR  ${${PLUGIN_NAME}_SOURCE_DIR} DIRECTORY)
 get_filename_component(PLUGINS_BINARY_DIR  ${${PLUGIN_NAME}_BINARY_DIR} DIRECTORY)
-=======
->>>>>>> 7b6444277f6480f4c43e809d9ca92fffdc8fd832
 
 include_directories( ${SIMPLViewProj_SOURCE_DIR}/Source)
 include_directories( ${SIMPLViewProj_BINARY_DIR})
