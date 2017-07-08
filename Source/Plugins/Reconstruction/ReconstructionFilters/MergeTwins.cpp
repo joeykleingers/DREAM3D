@@ -35,14 +35,13 @@
 
 #include "MergeTwins.h"
 
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_int.hpp>
-#include <boost/random/variate_generator.hpp>
+#include <random>
+#include <chrono>
 
 #include "SIMPLib/Common/Constants.h"
 #include "SIMPLib/FilterParameters/AbstractFilterParametersReader.h"
 #include "SIMPLib/FilterParameters/DataArraySelectionFilterParameter.h"
-#include "SIMPLib/FilterParameters/DoubleFilterParameter.h"
+#include "SIMPLib/FilterParameters/FloatFilterParameter.h"
 #include "SIMPLib/FilterParameters/SeparatorFilterParameter.h"
 #include "SIMPLib/FilterParameters/StringFilterParameter.h"
 #include "SIMPLib/Utilities/SIMPLibRandom.h"
@@ -98,8 +97,8 @@ void MergeTwins::setupFilterParameters()
 {
   FilterParameterVector parameters = getFilterParameters();
 
-  parameters.push_back(SIMPL_NEW_DOUBLE_FP("Axis Tolerance (Degrees)", AxisTolerance, FilterParameter::Parameter, MergeTwins));
-  parameters.push_back(SIMPL_NEW_DOUBLE_FP("Angle Tolerance (Degrees)", AngleTolerance, FilterParameter::Parameter, MergeTwins));
+  parameters.push_back(SIMPL_NEW_FLOAT_FP("Axis Tolerance (Degrees)", AxisTolerance, FilterParameter::Parameter, MergeTwins));
+  parameters.push_back(SIMPL_NEW_FLOAT_FP("Angle Tolerance (Degrees)", AngleTolerance, FilterParameter::Parameter, MergeTwins));
   {
     DataArraySelectionFilterParameter::RequirementType req = DataArraySelectionFilterParameter::CreateCategoryRequirement(SIMPL::TypeNames::Int32, 1, AttributeMatrix::Category::Feature);
     parameters.push_back(SIMPL_NEW_DA_SELECTION_FP("Phases", FeaturePhasesArrayPath, FilterParameter::RequiredArray, MergeTwins, req));
@@ -411,15 +410,9 @@ void MergeTwins::execute()
     // Generate all the numbers up front
     const int32_t rangeMin = 1;
     const int32_t rangeMax = numParents - 1;
-    typedef boost::uniform_int<int32_t> NumberDistribution;
-    typedef boost::mt19937 RandomNumberGenerator;
-    typedef boost::variate_generator<RandomNumberGenerator&, NumberDistribution> Generator;
-
-    NumberDistribution distribution(rangeMin, rangeMax);
-    RandomNumberGenerator generator;
-    Generator numberGenerator(generator, distribution);
-
-    generator.seed(static_cast<boost::uint32_t>(QDateTime::currentMSecsSinceEpoch())); // seed with the current time
+    std::mt19937_64::result_type seed = static_cast<std::mt19937_64::result_type>(std::chrono::steady_clock::now().time_since_epoch().count());
+    std::mt19937_64 generator(seed); // Standard mersenne_twister_engine seeded with milliseconds
+    std::uniform_int_distribution<int32_t> distribution(rangeMin, rangeMax);
 
     DataArray<int32_t>::Pointer rndNumbers = DataArray<int32_t>::CreateArray(numParents, "_INTERNAL_USE_ONLY_NewParentIds");
     int32_t* pid = rndNumbers->getPointer(0);
@@ -438,7 +431,7 @@ void MergeTwins::execute()
     //--- Shuffle elements by randomly exchanging each with one other.
     for(int32_t i = 1; i < numParents; i++)
     {
-      r = numberGenerator(); // Random remaining position.
+      r = distribution(generator); // Random remaining position.
       if(r >= numParents)
       {
         continue;

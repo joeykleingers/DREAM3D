@@ -74,7 +74,7 @@ SET(CPACK_PACKAGE_VERSION ${DREAM3D_VERSION})
 #set(CPACK_COMPONENT_RUNTIME_REQUIRED 1)
 
 set(CPACK_PACKAGE_EXECUTABLES
-    DREAM3D DREAM3D StatsGenerator StatsGenerator DevHelper DevHelper)
+    DREAM3D DREAM3D DevHelper DevHelper)
 set(UPLOAD_FILE_NAME "")
 
 if(APPLE)
@@ -130,6 +130,20 @@ if(WIN32 AND NOT UNIX)
   SET(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "DREAM3D Software Tools")
 ENDif(WIN32 AND NOT UNIX)
 
+if(APPLE)
+  set(CPACK_GENERATOR "DragNDrop")
+  option(CPACK_BINARY_DRAGNDROP    "Enable to build DMG packages"     OFF)
+  option(CPACK_BINARY_TGZ  "Enable to build TGZ packages"     ON)
+endif(APPLE)
+if("${CPACK_GENERATOR}" STREQUAL "DragNDrop")
+  set(CPACK_DMG_BACKGROUND_IMAGE
+      "${BrandedSIMPLView_DIR}/packaging/DREAM3D_DMGBackground.tif")
+  set(CPACK_DMG_DS_STORE_SETUP_SCRIPT
+      "${PROJECT_RESOURCES_DIR}/CPack/DREAM3D_DMGSetup.scpt")
+endif()
+
+
+set(CPACK_GENERATOR "")
 if(NOT CPACK_GENERATOR)
   if(UNIX)
     if(CYGWIN)
@@ -138,6 +152,7 @@ if(NOT CPACK_GENERATOR)
       if(APPLE)
         option(CPACK_BINARY_PACKAGEMAKER "Enable to build PackageMaker packages" OFF)
         option(CPACK_BINARY_OSXX11       "Enable to build OSX X11 packages"      OFF)
+        option(CPACK_BINARY_DRAGNDROP    "Enable to build DMG packages"     OFF)
       else(APPLE)
         option(CPACK_BINARY_TZ  "Enable to build TZ packages"     OFF)
       endif(APPLE)
@@ -147,6 +162,7 @@ if(NOT CPACK_GENERATOR)
       option(CPACK_BINARY_DEB  "Enable to build Debian packages"  OFF)
       option(CPACK_BINARY_RPM  "Enable to build RPM packages"     OFF)
       option(CPACK_BINARY_NSIS "Enable to build NSIS packages"    OFF)
+      option(CPACK_BINARY_ZIP  "Enable to build ZIP packages"     OFF)
     endif(CYGWIN)
   else(UNIX)
     option(CPACK_BINARY_NSIS "Enable to build NSIS packages" OFF)
@@ -176,7 +192,7 @@ SET(CPACK_SOURCE_IGNORE_FILES "/i386/;/x64/;/VS2008/;/zRel/;/Build/;/\\\\.git/;\
 set(CPACK_INSTALL_CMAKE_PROJECTS "${CPACK_INSTALL_CMAKE_PROJECTS};${DREAM3DProj_BINARY_DIR};DREAM3DProj;ALL;/")
 # Install ITK
 if(UNIX AND NOT APPLE) 
-  if(DREAM3D_USE_ITK AND NOT APPLE AND NOT WIN32)
+  if(SIMPL_USE_ITK)
     set(CPACK_INSTALL_CMAKE_PROJECTS "${CPACK_INSTALL_CMAKE_PROJECTS};${ITK_DIR};ITK;RuntimeLibraries;/")
     # GDCM
     set(CPACK_INSTALL_CMAKE_PROJECTS "${CPACK_INSTALL_CMAKE_PROJECTS};${ITK_DIR};ITK;Libraries;/")

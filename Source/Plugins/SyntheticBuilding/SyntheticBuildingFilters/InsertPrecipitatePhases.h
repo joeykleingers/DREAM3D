@@ -73,6 +73,15 @@ class InsertPrecipitatePhases : public AbstractFilter
 
     virtual ~InsertPrecipitatePhases();
 
+    using EnumType = unsigned int;
+
+    enum class SaveMethod : EnumType
+    {
+      SaveToNew = 0,
+      AppendToExisting = 1,
+      DoNotSave = 2
+    };
+
     SIMPL_INSTANCE_STRING_PROPERTY(ClusteringListArrayName)
 
     SIMPL_INSTANCE_STRING_PROPERTY(ErrorOutputFile)
@@ -145,6 +154,15 @@ class InsertPrecipitatePhases : public AbstractFilter
 
     SIMPL_FILTER_PARAMETER(DataArrayPath, NumFeaturesArrayPath)
     Q_PROPERTY(DataArrayPath NumFeaturesArrayPath READ getNumFeaturesArrayPath WRITE setNumFeaturesArrayPath)
+
+    SIMPL_FILTER_PARAMETER(int, SaveGeometricDescriptions)
+    Q_PROPERTY(int SaveGeometricDescriptions READ getSaveGeometricDescriptions WRITE setSaveGeometricDescriptions)
+
+    SIMPL_FILTER_PARAMETER(DataArrayPath, NewAttributeMatrixPath)
+    Q_PROPERTY(DataArrayPath NewAttributeMatrixPath READ getNewAttributeMatrixPath WRITE setNewAttributeMatrixPath)
+
+    SIMPL_FILTER_PARAMETER(DataArrayPath, SelectedAttributeMatrixPath)
+    Q_PROPERTY(DataArrayPath SelectedAttributeMatrixPath READ getSelectedAttributeMatrixPath WRITE setSelectedAttributeMatrixPath)
 
     /**
      * @brief getCompiledLibraryName Reimplemented from @see AbstractFilter class
@@ -407,6 +425,11 @@ class InsertPrecipitatePhases : public AbstractFilter
      */
     void compare_3Ddistributions(std::vector<std::vector<std::vector<float> > >, std::vector<std::vector<std::vector<float> > >, float& sqrerror);
 
+    /**
+     * @brief Moves the temporary arrays that hold the inputs into the shape algorithms
+     * into another attribute matrix
+     */
+    void moveShapeDescriptions();
 
   private:
     int32_t m_FirstPrecipitateFeature;
@@ -496,6 +519,16 @@ class InsertPrecipitatePhases : public AbstractFilter
      * Feature Attribute Matrix
      */
     void updateFeatureInstancePointers();
+
+    /**
+     * @brief saveToNewAttributeMatrix
+     */
+    void saveToNewAttributeMatrix(QList<IDataArray::Pointer> incomingArrays);
+
+    /**
+     * @brief appendToExistingAttributeMatrix
+     */
+    void appendToExistingAttributeMatrix(QList<IDataArray::Pointer> incomingArrays);
 
     InsertPrecipitatePhases(const InsertPrecipitatePhases&); // Copy Constructor Not Implemented
     void operator=(const InsertPrecipitatePhases&); // Operator '=' Not Implemented

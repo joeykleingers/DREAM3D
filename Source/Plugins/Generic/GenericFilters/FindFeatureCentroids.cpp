@@ -274,7 +274,7 @@ const QString FindFeatureCentroids::getFilterVersion()
 // -----------------------------------------------------------------------------
 const QString FindFeatureCentroids::getGroupName()
 {
-  return SIMPL::FilterGroups::GenericFilters;
+  return SIMPL::FilterGroups::Generic;
 }
 
 // -----------------------------------------------------------------------------
@@ -282,7 +282,7 @@ const QString FindFeatureCentroids::getGroupName()
 // -----------------------------------------------------------------------------
 const QString FindFeatureCentroids::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::MiscFilters;
+  return SIMPL::FilterSubGroups::MorphologicalFilters;
 }
 
 // -----------------------------------------------------------------------------

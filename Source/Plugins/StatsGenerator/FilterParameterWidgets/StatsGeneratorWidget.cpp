@@ -82,7 +82,7 @@ StatsGeneratorWidget::StatsGeneratorWidget(FilterParameter* parameter, AbstractF
   m_Filter = dynamic_cast<StatsGeneratorFilter*>(filter);
   Q_ASSERT_X(m_Filter != nullptr, "NULL Pointer", "StatsGeneratorFilterWidget can ONLY be used with an StatsGeneratorFilter filter");
 
-  m_OpenDialogLastDirectory = QDir::homePath();
+  m_OpenDialogLastFilePath = QDir::homePath();
   setWidgetIsExpanding(true);
   setupUi(this);
   setupGui();
@@ -136,6 +136,7 @@ void StatsGeneratorWidget::setupGui()
     size_t ensembles = sda->getNumberOfTuples();
     QProgressDialog progress("Opening Stats File....", "Cancel", 0, ensembles, this);
     progress.setWindowModality(Qt::WindowModal);
+    progress.setMinimumDuration(0);
 
     QVector<size_t> tDims(1, ensembles);
     AttributeMatrix::Pointer cellEnsembleAttrMat = AttributeMatrix::New(tDims, SIMPL::Defaults::CellEnsembleAttributeMatrixName, AttributeMatrix::Type::CellEnsemble);
@@ -159,40 +160,41 @@ void StatsGeneratorWidget::setupGui()
       {
         progress.setLabelText("Opening Boundaray Phase...");
         BoundaryPhaseWidget* w = new BoundaryPhaseWidget(this);
-        phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        phaseTabs->addTab(w, w->getTabTitle());
         connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
       else if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::Matrix))
       {
         progress.setLabelText("Opening Matrix Phase...");
         MatrixPhaseWidget* w = new MatrixPhaseWidget(this);
-        phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        phaseTabs->addTab(w, w->getTabTitle());
         connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
       if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::Precipitate))
       {
         progress.setLabelText("Opening Precipitate Phase...");
         PrecipitatePhaseWidget* w = new PrecipitatePhaseWidget(this);
-        phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        phaseTabs->addTab(w, w->getTabTitle());
         connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
       if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::Primary))
       {
         progress.setLabelText("Opening Primary Phase...");
         PrimaryPhaseWidget* w = new PrimaryPhaseWidget(this);
-        phaseTabs->addTab(w, w->getTabTitle());
+        connect(w, SIGNAL(progressText(const QString&)), &progress, SLOT(setLabelText(const QString&)));
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        phaseTabs->addTab(w, w->getTabTitle());
         connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
       if (phaseTypes->getValue(phase) == static_cast<PhaseType::EnumType>(PhaseType::Type::Transformation))
       {
         progress.setLabelText("Opening Transformation Phase...");
         TransformationPhaseWidget* w = new TransformationPhaseWidget(this);
-        phaseTabs->addTab(w, w->getTabTitle());
         w->extractStatsData(cellEnsembleAttrMat, static_cast<int>(phase));
+        phaseTabs->addTab(w, w->getTabTitle());
         connect(w, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
       }
       else
@@ -334,7 +336,7 @@ void StatsGeneratorWidget::on_addPhase_clicked()
     if(dialog.getPhaseType() == PhaseType::Type::Primary)
     {
       PrimaryPhaseWidget* ppw = new PrimaryPhaseWidget();
-      phaseTabs->addTab(ppw, "Primary");
+      phaseTabs->addTab(ppw, dialog.getPhaseName());
 
       connect(ppw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
@@ -353,7 +355,7 @@ void StatsGeneratorWidget::on_addPhase_clicked()
     else if(dialog.getPhaseType() == PhaseType::Type::Precipitate)
     {
       PrecipitatePhaseWidget* ppw = new PrecipitatePhaseWidget();
-      phaseTabs->addTab(ppw, "Precipitate");
+      phaseTabs->addTab(ppw, dialog.getPhaseName());
 
       connect(ppw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
@@ -372,7 +374,7 @@ void StatsGeneratorWidget::on_addPhase_clicked()
     else if(dialog.getPhaseType() == PhaseType::Type::Transformation)
     {
       TransformationPhaseWidget* tpw = new TransformationPhaseWidget();
-      phaseTabs->addTab(tpw, "Transformation");
+      phaseTabs->addTab(tpw, dialog.getPhaseName());
 
       connect(tpw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
@@ -390,7 +392,7 @@ void StatsGeneratorWidget::on_addPhase_clicked()
     else if(dialog.getPhaseType() == PhaseType::Type::Matrix)
     {
       MatrixPhaseWidget* mpw = new MatrixPhaseWidget();
-      phaseTabs->addTab(mpw, "Matrix");
+      phaseTabs->addTab(mpw, dialog.getPhaseName());
 
       connect(mpw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
@@ -407,7 +409,7 @@ void StatsGeneratorWidget::on_addPhase_clicked()
     else if(dialog.getPhaseType() == PhaseType::Type::Boundary)
     {
       BoundaryPhaseWidget* bpw = new BoundaryPhaseWidget();
-      phaseTabs->addTab(bpw, "Boundary");
+      phaseTabs->addTab(bpw, dialog.getPhaseName());
 
       connect(bpw, SIGNAL(dataChanged()), this, SIGNAL(parametersChanged()));
 
@@ -495,6 +497,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       ppw->setPhaseFraction(dialog.getPhaseFraction());
       ppw->setPhaseType(dialog.getPhaseType());
       ppw->setPhaseName(dialog.getPhaseName());
+      phaseTabs->setTabText(phaseTabs->currentIndex(), dialog.getPhaseName());
       QString cName = ppw->getComboString();
       setWindowModified(true);
       emit parametersChanged();
@@ -508,6 +511,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       ppw->setPhaseType(dialog.getPhaseType());
       ppw->setPptFraction(dialog.getPptFraction());
       ppw->setPhaseName(dialog.getPhaseName());
+      phaseTabs->setTabText(phaseTabs->currentIndex(), dialog.getPhaseName());
       QString cName = ppw->getComboString();
       setWindowModified(true);
       emit parametersChanged();
@@ -521,6 +525,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       tpw->setPhaseType(dialog.getPhaseType());
       //tpw->setParentPhase(dialog.getParentPhase());
       tpw->setPhaseName(dialog.getPhaseName());
+      phaseTabs->setTabText(phaseTabs->currentIndex(), dialog.getPhaseName());
       QString cName = tpw->getComboString();
       setWindowModified(true);
       emit parametersChanged();
@@ -533,6 +538,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       mpw->setPhaseFraction(dialog.getPhaseFraction());
       mpw->setPhaseType(dialog.getPhaseType());
       mpw->setPhaseName(dialog.getPhaseName());
+      phaseTabs->setTabText(phaseTabs->currentIndex(), dialog.getPhaseName());
       QString cName = mpw->getComboString();
       setWindowModified(true);
       emit parametersChanged();
@@ -544,6 +550,7 @@ void StatsGeneratorWidget::on_editPhase_clicked()
       bpw->setPhaseFraction(dialog.getPhaseFraction());
       bpw->setPhaseType(dialog.getPhaseType());
       bpw->setPhaseName(dialog.getPhaseName());
+      phaseTabs->setTabText(phaseTabs->currentIndex(), dialog.getPhaseName());
       QString cName = bpw->getComboString();
       setWindowModified(true);
       emit parametersChanged();
@@ -733,7 +740,7 @@ DataContainerArray::Pointer StatsGeneratorWidget::generateDataContainerArray()
 void StatsGeneratorWidget::on_saveJsonBtn_clicked()
 {
 
-  QString proposedFile = m_OpenDialogLastDirectory + QDir::separator() + "Untitled.json";
+  QString proposedFile = m_OpenDialogLastFilePath + QDir::separator() + "Untitled.json";
   QString outFile = QFileDialog::getSaveFileName(this, tr("Save JSON File"), proposedFile, tr("JSON Files (*.json)"));
 
   if(true == outFile.isEmpty())
@@ -742,7 +749,7 @@ void StatsGeneratorWidget::on_saveJsonBtn_clicked()
   }
   QFileInfo fi(outFile);
   QString ext = fi.suffix();
-  m_OpenDialogLastDirectory = fi.path();
+  m_OpenDialogLastFilePath = outFile;
 
   DataContainerArray::Pointer dca = generateDataContainerArray();
   AttributeMatrix::Pointer am = dca->getAttributeMatrix(DataArrayPath(SIMPL::Defaults::StatsGenerator, SIMPL::Defaults::CellEnsembleAttributeMatrixName, ""));
@@ -777,7 +784,7 @@ void StatsGeneratorWidget::on_saveJsonBtn_clicked()
 // -----------------------------------------------------------------------------
 void StatsGeneratorWidget::on_saveH5Btn_clicked()
 {
-  QString proposedFile = m_OpenDialogLastDirectory + QDir::separator() + "Untitled.dream3d";
+  QString proposedFile = m_OpenDialogLastFilePath;
 
   QString h5file = QFileDialog::getSaveFileName(this, tr("Save DREAM.3D File"), proposedFile, tr("DREAM.3D Files (*.dream3d)"));
 
@@ -788,7 +795,7 @@ void StatsGeneratorWidget::on_saveH5Btn_clicked()
 
   QFileInfo fi(h5file);
   QString ext = fi.suffix();
-  m_OpenDialogLastDirectory = fi.path();
+  m_OpenDialogLastFilePath = fi.filePath();
 
   DataContainerArray::Pointer dca = generateDataContainerArray();
 
@@ -811,7 +818,7 @@ void StatsGeneratorWidget::on_saveH5Btn_clicked()
 // -----------------------------------------------------------------------------
 void StatsGeneratorWidget::on_openStatsFile_clicked()
 {
-  QString proposedFile = m_OpenDialogLastDirectory + QDir::separator() + "Untitled.dream3d";
+  QString proposedFile = m_OpenDialogLastFilePath + QDir::separator() + "Untitled.dream3d";
   QString h5file = QFileDialog::getOpenFileName(this, tr("Open Statistics File"), proposedFile, tr("DREAM3D Files (*.dream3d);;H5Stats Files(*.h5stats);;HDF5 Files(*.h5 *.hdf5);;All Files(*.*)"));
   if(true == h5file.isEmpty())
   {
@@ -835,7 +842,7 @@ void StatsGeneratorWidget::on_openStatsFile_clicked()
   }
 
   // Set the last directory that contains our file
-  m_OpenDialogLastDirectory = fi.path();
+  m_OpenDialogLastFilePath = fi.path();
 
   // Delete any existing phases from the GUI
   phaseTabs->clear();

@@ -277,6 +277,14 @@ void StatsGenMDFWidget::updateMDFPlot(QVector<float>& odf)
       return;
     }
   }
+  else
+  {
+    err = 1;
+    QString ss("Only Cubic_High or Hexagonal_High are allowed for the Laue group.");
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::critical(nullptr, QString("MDF Generation Error"), ss, QMessageBox::Ok);
+    Q_UNUSED(reply);
+  }
 
   QwtArray<double> xD(static_cast<int>(x.size()));
   QwtArray<double> yD(static_cast<int>(x.size()));
@@ -348,7 +356,7 @@ void StatsGenMDFWidget::on_deleteMDFRowBtn_clicked()
 // -----------------------------------------------------------------------------
 void StatsGenMDFWidget::on_loadMDFBtn_clicked()
 {
-  QString proposedFile = m_OpenDialogLastDirectory;
+  QString proposedFile = m_OpenDialogLastFilePath;
   QString file = QFileDialog::getOpenFileName(this, tr("Open MDF File"), proposedFile, tr("Text Document (*.txt)"));
   if(true == file.isEmpty())
   {
@@ -356,6 +364,9 @@ void StatsGenMDFWidget::on_loadMDFBtn_clicked()
   }
   else
   {
+    QFileInfo fi(file);
+    m_OpenDialogLastFilePath = fi.filePath();
+
     size_t numMisorients = 0;
     QString filename = file;
     std::ifstream inFile;

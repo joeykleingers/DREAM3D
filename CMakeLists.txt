@@ -43,6 +43,11 @@ if(NOT "${DREAM3D_SDK}" STREQUAL "")
   endif()
 endif()
 
+# Request C++11 standard, using new CMake variables.
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS False)
+
 if(${CMAKE_MAJOR_VERSION} STREQUAL "3")
   # CMake 3.0 introduces VERSION variables for each Project.
   cmake_policy(SET CMP0048 NEW)
@@ -50,14 +55,16 @@ if(${CMAKE_MAJOR_VERSION} STREQUAL "3")
   cmake_policy(SET CMP0042 OLD)
   # CMake 3.1 introduces if() policies on dereferencing variables in quotes
   cmake_policy(SET CMP0054 NEW)
+
+  cmake_policy(SET CMP0002 NEW)
 endif()
 
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.6.0)
 
 #------------------------------------------------------------------------------
 # Create the Top level Project
 # 
-project(DREAM3DProj VERSION 6.3.0.0)
+project(DREAM3DProj VERSION 6.4.0.0)
 set(PROJECT_CODE_DIR ${PROJECT_SOURCE_DIR}/Source)
 
 # ---------- Setup output Directories -------------------------
@@ -215,6 +222,11 @@ cmpRevisionString( GENERATED_HEADER_FILE_PATH "${SIMPLView_VERSION_HDR_FILE}"
                         PROJECT_NAME "${PROJECT_NAME}"
                         EXPORT_MACRO "SIMPLView_EXPORT")
 
+set_property(GLOBAL PROPERTY SIMPLViewProj_VERSION_MAJOR "${${PROJECT_NAME}_VERSION_MAJOR}")
+set_property(GLOBAL PROPERTY SIMPLViewProj_VERSION_MINOR "${${PROJECT_NAME}_VERSION_MINOR}")
+set_property(GLOBAL PROPERTY SIMPLViewProj_VERSION_PATCH "${${PROJECT_NAME}_VERSION_PATCH}")
+set_property(GLOBAL PROPERTY SIMPLViewProj_VERSION_TWEAK "${${PROJECT_NAME}_VERSION_TWEAK}")
+
 make_directory("${DREAM3DProj_BINARY_DIR}/SIMPLView/SIMPLView")
 file(RENAME "${DREAM3DProj_BINARY_DIR}/${SIMPLView_VERSION_HDR_FILE}" "${DREAM3DProj_BINARY_DIR}/SIMPLView/SIMPLView/${SIMPLView_VERSION_HDR_FILE}")
 file(RENAME "${DREAM3DProj_BINARY_DIR}/${SIMPLView_VERSION_SRC_FILE}" "${DREAM3DProj_BINARY_DIR}/SIMPLView/SIMPLView/${SIMPLView_VERSION_SRC_FILE}")
@@ -267,6 +279,13 @@ if(APPLE)
 endif()
 get_property(DREAM3D_PACKAGE_DEST_PREFIX GLOBAL PROPERTY DREAM3D_PACKAGE_DEST_PREFIX)
 
+
+# ------- Enable the CTest testing. ---------------
+OPTION(SIMPL_BUILD_TESTING "Compile the test programs" ON)
+if(SIMPL_BUILD_TESTING)
+    #ENABLE_TESTING()
+    include( CTest )
+endif()
 
 
 # -----------------------------------------------------------------------
@@ -337,7 +356,7 @@ endif(BUILD_SHARED_LIBS)
 # --------------------------------------------------------------------
 # Find and Use the Qt5 Libraries
 include(${CMP_SOURCE_DIR}/ExtLib/Qt5Support.cmake)
-set(DREAM3D_Qt5_Components Core Widgets Network Gui Concurrent Svg Xml OpenGL PrintSupport Sql)
+set(DREAM3D_Qt5_Components Core Widgets Network Gui Concurrent Xml OpenGL PrintSupport Sql)
 option(SIMPLView_USE_QtWebEngine "Use QWebEngine to display Help. OFF=Use default web browser" ON)
 CMP_AddQt5Support( "${DREAM3D_Qt5_Components}"
                     "${SIMPLView_USE_QtWebEngine}"
@@ -350,18 +369,6 @@ CMP_AddQt5Support( "${DREAM3D_Qt5_Components}"
 # up the targets (Exported) that it needs. We just need to find where
 # HDF5 is installed.
 include(${CMP_SOURCE_DIR}/ExtLib/HDF5Support.cmake)
-
-# ---------- Find Boost Headers/Libraries -----------------------
-#set(Boost_FIND_REQUIRED FALSE)
-set(Boost_DEBUG FALSE)
-set(Boost_USE_MULTITHREADED TRUE)
-set(Boost_ADDITIONAL_VERSIONS 1.57)
-set(Boost_FIND_COMPONENTS "")
-set(Boost_NO_BOOST_CMAKE 1)
-FIND_PACKAGE(Boost)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-list(APPEND CMP_LIB_SEARCH_DIRS ${Boost_LIBRARY_DIRS})
 
 # --------------------------------------------------------------------
 # Should we use Intel Threading Building Blocks
@@ -462,18 +469,8 @@ if(MSVC)
  option(SIMPL_DISABLE_MSVC_WARNINGS "Disable some MSVC Compiler warnings" OFF)
 endif()
 
-
-
 include_directories(${DREAM3DProj_SOURCE_DIR}/Source)
 include_directories(${PROJECT_BINARY_DIR})
-
-
-# ------- Enable the CTest testing. Use make test to run all tests ---------------
-OPTION(SIMPL_BUILD_TESTING "Compile the test programs" ON)
-if(SIMPL_BUILD_TESTING)
-    #ENABLE_TESTING()
-    include( CTest )
-endif()
 
 # -----------------------------------------------------------------------
 # -- Build the EbsdLib Library
@@ -600,6 +597,9 @@ if(EXISTS ${data_file})
   install(FILES ${SYNTHETIC_STATS_FILES}
           DESTINATION Data/
           COMPONENT Applications )
+  install(DIRECTORY ${DREAM3D_DATA_DIR}/Data/SmallIN100 ${DREAM3D_DATA_DIR}/Data/Image ${DREAM3D_DATA_DIR}/Data/Textured_Copper
+          DESTINATION Data/
+          COMPONENT Applications)
 endif()
 
 #-- This is example code that loops over all the DocGroups and each .md BUILD_WITH_INSTALL_RPATH

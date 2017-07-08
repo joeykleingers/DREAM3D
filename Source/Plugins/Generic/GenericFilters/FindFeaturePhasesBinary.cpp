@@ -264,7 +264,7 @@ const QString FindFeaturePhasesBinary::getFilterVersion()
 // -----------------------------------------------------------------------------
 const QString FindFeaturePhasesBinary::getGroupName()
 {
-  return SIMPL::FilterGroups::GenericFilters;
+  return SIMPL::FilterGroups::Generic;
 }
 
 // -----------------------------------------------------------------------------
@@ -272,7 +272,7 @@ const QString FindFeaturePhasesBinary::getGroupName()
 // -----------------------------------------------------------------------------
 const QString FindFeaturePhasesBinary::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::MiscFilters;
+  return SIMPL::FilterSubGroups::MorphologicalFilters;
 }
 
 // -----------------------------------------------------------------------------

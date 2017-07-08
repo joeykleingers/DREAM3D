@@ -67,6 +67,8 @@
 #include "EbsdLib/HKL/CtfReader.h"
 #include "EbsdLib/TSL/AngReader.h"
 
+#include "SVWidgetsLib/Widgets/ProgressDialog.h"
+
 #include "OrientationLib/IO/AngleFileLoader.h"
 #include "OrientationLib/Texture/StatsGen.hpp"
 #include "OrientationLib/Texture/Texture.hpp"
@@ -77,6 +79,7 @@
 #include "StatsGenerator/Widgets/StatsGenMDFWidget.h"
 #include "StatsGenerator/Widgets/TableModels/SGODFTableModel.h"
 #include "StatsGenerator/Widgets/TextureDialog.h"
+
 
 #define SHOW_POLE_FIGURES 1
 #define COLOR_POLE_FIGURES 1
@@ -94,9 +97,8 @@ StatsGenODFWidget::StatsGenODFWidget(QWidget* parent)
 , m_PhaseIndex(-1)
 , m_CrystalStructure(Ebsd::CrystalStructure::Cubic_High)
 , m_ODFTableModel(nullptr)
-, m_MDFWidget(nullptr)
 {
-  m_OpenDialogLastDirectory = QDir::homePath();
+  m_OpenDialogLastFilePath = QDir::homePath();
   this->setupUi(this);
   this->setupGui();
 }
@@ -111,6 +113,57 @@ StatsGenODFWidget::~StatsGenODFWidget()
     m_ODFTableModel->deleteLater();
   }
 }
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void StatsGenODFWidget::on_m_WeightSpreads_clicked(bool checked)
+{
+  m_WeightSpreadsStackedWidget->setCurrentIndex(0);
+  m_ODFTableView->setModel(m_ODFTableModel);
+  QAbstractItemDelegate* idelegate = m_ODFTableModel->getItemDelegate();
+  m_ODFTableView->setItemDelegate(idelegate);
+  emit bulkLoadEvent(false);
+  emit dataChanged();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void StatsGenODFWidget::on_m_WeightSpreadsBulkLoad_clicked(bool checked)
+{
+  m_WeightSpreadsStackedWidget->setCurrentIndex(1);
+  m_ODFTableView->setModel(m_OdfBulkTableModel);
+  QAbstractItemDelegate* idelegate = m_OdfBulkTableModel->getItemDelegate();
+  m_ODFTableView->setItemDelegate(idelegate);
+  emit bulkLoadEvent(!(m_OdfBulkTableModel->rowCount() > 0));
+  emit dataChanged();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void StatsGenODFWidget::on_m_ODFParametersBtn_clicked(bool b)
+{
+  stackedWidget->setCurrentIndex(0);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void StatsGenODFWidget::on_m_MDFParametersBtn_clicked(bool b)
+{
+  stackedWidget->setCurrentIndex(1);
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+//void StatsGenODFWidget::on_pfImageSize_editingFinished()
+//{
+//  updatePlots();
+//  m_PoleFigureLabel->focusWidget();
+//}
 
 // -----------------------------------------------------------------------------
 //
@@ -187,7 +240,7 @@ int StatsGenODFWidget::getOrientationData(StatsData* statsData, PhaseType::Type 
 
   SGODFTableModel* tableModel = nullptr;
 
-  if(weightSpreadGroupBox->isChecked())
+  if(m_WeightSpreads->isChecked())
   {
     tableModel = m_ODFTableModel;
   }
@@ -225,14 +278,11 @@ int StatsGenODFWidget::getOrientationData(StatsData* statsData, PhaseType::Type 
 // -----------------------------------------------------------------------------
 void StatsGenODFWidget::enableMDFTab(bool b)
 {
-  if(nullptr != m_MDFWidget)
+  if(b)
   {
-    m_MDFWidget->deleteLater();
+    m_MDFWidget->setODFTableModel(m_ODFTableModel);
+    connect(m_MDFWidget, SIGNAL(dataChanged()), this, SIGNAL(dataChanged()));
   }
-  m_MDFWidget = new StatsGenMDFWidget();
-  m_MDFWidget->setODFTableModel(m_ODFTableModel);
-  tabWidget->addTab(m_MDFWidget, QString("MDF"));
-  connect(m_MDFWidget, SIGNAL(dataChanged()), this, SIGNAL(dataChanged()));
 }
 
 // -----------------------------------------------------------------------------
@@ -284,6 +334,16 @@ int StatsGenODFWidget::getPhaseIndex()
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
+void StatsGenODFWidget::tableDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight)
+{
+  Q_UNUSED(topLeft);
+  Q_UNUSED(bottomRight);
+  updatePlots();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
 void StatsGenODFWidget::setupGui()
 {
   // Setup the TableView and Table Models
@@ -301,6 +361,11 @@ void StatsGenODFWidget::setupGui()
   m_ODFTableModel->setCrystalStructure(m_CrystalStructure);
   m_ODFTableModel->setInitialValues();
   m_ODFTableView->setModel(m_ODFTableModel);
+
+  connect(m_ODFTableModel, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)),
+          this, SLOT(tableDataChanged(const QModelIndex&, const QModelIndex&)));
+
+
   QAbstractItemDelegate* idelegate = m_ODFTableModel->getItemDelegate();
   m_ODFTableView->setItemDelegate(idelegate);
 
@@ -311,13 +376,22 @@ void StatsGenODFWidget::setupGui()
   m_PlotCurves.push_back(new QwtPlotCurve);
   m_PlotCurves.push_back(new QwtPlotCurve);
 
+  m_ButtonGroup.addButton(m_WeightSpreads);
+  m_ButtonGroup.addButton(m_WeightSpreadsBulkLoad);
+  on_m_WeightSpreads_clicked(true);
+
   // In release mode hide the Lambert Square Size.
-  QString releaseType = QString::fromLatin1("Official");
+  QString releaseType = QString::fromLatin1(SIMPLProj_RELEASE_TYPE);
   if(releaseType.compare("Official") == 0)
   {
     pfLambertSize->hide();
     pfLambertLabel->hide();
   }
+
+  m_ODFGroup.addButton(m_ODFParametersBtn);
+  m_ODFGroup.addButton(m_MDFParametersBtn);
+
+  on_m_ODFParametersBtn_clicked(true);
 }
 
 // -----------------------------------------------------------------------------
@@ -432,7 +506,9 @@ void StatsGenODFWidget::drawODFPlotGrid(QwtPlot* plot)
 // -----------------------------------------------------------------------------
 void StatsGenODFWidget::updatePlots()
 {
-  on_m_CalculateODFBtn_clicked();
+  m_AbortUpdate = false;
+  calculateODF();
+  m_AbortUpdate = true;
 }
 
 // -----------------------------------------------------------------------------
@@ -440,7 +516,21 @@ void StatsGenODFWidget::updatePlots()
 // -----------------------------------------------------------------------------
 void StatsGenODFWidget::on_m_CalculateODFBtn_clicked()
 {
+  updatePlots();
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void StatsGenODFWidget::calculateODF()
+{
   int err = 0;
+  if(m_AbortUpdate) { return; }
+  ProgressDialog* progressDialog = new ProgressDialog();
+  progressDialog->setLabelText("Updating ODF Sampling.... ");
+  progressDialog->show();
+  progressDialog->raise();
+  progressDialog->activateWindow();
 
   QwtArray<float> e1s;
   QwtArray<float> e2s;
@@ -451,7 +541,7 @@ void StatsGenODFWidget::on_m_CalculateODFBtn_clicked()
   SGODFTableModel* tableModel = nullptr;
 
   int npoints = 0;
-  if(weightSpreadGroupBox->isChecked())
+  if(m_WeightSpreads->isChecked())
   {
     tableModel = m_ODFTableModel;
     npoints = pfSamplePoints->value();
@@ -534,9 +624,18 @@ void StatsGenODFWidget::on_m_CalculateODFBtn_clicked()
 
     figures = ops.generatePoleFigure(config);
   }
+  else
+  {
+    err = 1;
+    QString ss("Only Cubic_High, Hexagonal_High or OrthoRhombic are allowed for the Laue group.");
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::critical(nullptr, QString("ODF Generation Error"), ss, QMessageBox::Ok);
+    Q_UNUSED(reply);
+  }
 
   if(err == 1)
   {
+    delete progressDialog;
     // TODO: Present Error Message
     return;
   }
@@ -550,7 +649,7 @@ void StatsGenODFWidget::on_m_CalculateODFBtn_clicked()
     m_MDFWidget->setEnabled(true);
     m_MDFWidget->updateMDFPlot(odf);
   }
-
+  delete progressDialog;
   emit dataChanged();
 }
 
@@ -563,15 +662,17 @@ void StatsGenODFWidget::on_addODFTextureBtn_clicked()
   int r = t.exec();
   if(r == QDialog::Accepted)
   {
+    m_AbortUpdate = true;
     if(!m_ODFTableModel->insertRow(m_ODFTableModel->rowCount()))
     {
       return;
     }
+    m_AbortUpdate = false;
     // Gather values from the dialog and push them to the Table Model
     float e1 = 0.0;
     float e2 = 0.0;
     float e3 = 0.0;
-    float weight = 1.0;
+    float weight = 500000.0;
     float sigma = 1.0;
 
     t.getODFEntry(e1, e2, e3, weight, sigma);
@@ -583,8 +684,8 @@ void StatsGenODFWidget::on_addODFTextureBtn_clicked()
     m_ODFTableView->setFocus();
     QModelIndex index = m_ODFTableModel->index(m_ODFTableModel->rowCount() - 1, 0);
     m_ODFTableView->setCurrentIndex(index);
+    updatePlots();
   }
-  emit dataChanged();
 }
 
 // -----------------------------------------------------------------------------
@@ -592,9 +693,17 @@ void StatsGenODFWidget::on_addODFTextureBtn_clicked()
 // -----------------------------------------------------------------------------
 void StatsGenODFWidget::on_selectAnglesFile_clicked()
 {
-  QString proposedFile = m_OpenDialogLastDirectory;
+  QString proposedFile = m_OpenDialogLastFilePath;
+  if(false == angleFilePath->text().isEmpty())
+  {
+    proposedFile = angleFilePath->text();
+  }
   QString file = QFileDialog::getOpenFileName(this, tr("Select Angles File"), proposedFile, tr("Text Document (*.txt)"));
-  angleFilePath->setText(file);
+  if (false == file.isEmpty())
+  {
+    angleFilePath->setText(file);
+    m_OpenDialogLastFilePath = file;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -615,7 +724,7 @@ void StatsGenODFWidget::on_angleFilePath_textChanged()
   m_OdfBulkTableModel->setInitialValues();
 
   emit bulkLoadEvent(true);
-  emit dataChanged();
+  updatePlots();
 }
 
 // -----------------------------------------------------------------------------
@@ -882,7 +991,7 @@ void StatsGenODFWidget::on_deleteODFTextureBtn_clicked()
   {
     m_ODFTableView->resizeColumnsToContents();
   }
-  emit dataChanged();
+  updatePlots();
 }
 
 // -----------------------------------------------------------------------------
@@ -904,38 +1013,12 @@ StatsGenMDFWidget* StatsGenODFWidget::getMDFWidget()
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void StatsGenODFWidget::on_bulkLoadGroupBox_clicked(bool checked)
-{
-  weightSpreadGroupBox->setChecked(!checked);
-  m_ODFTableView->setModel(m_OdfBulkTableModel);
-  QAbstractItemDelegate* idelegate = m_OdfBulkTableModel->getItemDelegate();
-  m_ODFTableView->setItemDelegate(idelegate);
-  emit bulkLoadEvent(!(m_OdfBulkTableModel->rowCount() > 0));
-  emit dataChanged();
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-void StatsGenODFWidget::on_weightSpreadGroupBox_clicked(bool checked)
-{
-  bulkLoadGroupBox->setChecked(!checked);
-  m_ODFTableView->setModel(m_ODFTableModel);
-  QAbstractItemDelegate* idelegate = m_ODFTableModel->getItemDelegate();
-  m_ODFTableView->setItemDelegate(idelegate);
-  emit bulkLoadEvent(false);
-  emit dataChanged();
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
 void StatsGenODFWidget::on_savePoleFigureImage_clicked()
 {
   QString Ftype = "Image Files";
   QString ext = "*.png";
   QString s = "Image Files (*.tiff *.png *.bmp);;All Files(*.*)";
-  QString defaultName = m_OpenDialogLastDirectory + QDir::separator() + "Untitled.png";
+  QString defaultName = m_OpenDialogLastFilePath;
   QString file = QFileDialog::getSaveFileName(this, tr("Save File As"), defaultName, s);
 
   if(true == file.isEmpty())
@@ -945,8 +1028,7 @@ void StatsGenODFWidget::on_savePoleFigureImage_clicked()
   // bool ok = false;
   file = QDir::toNativeSeparators(file);
   // Store the last used directory into the private instance variable
-  QFileInfo fi(file);
-  m_OpenDialogLastDirectory = fi.path();
+  m_OpenDialogLastFilePath = file;
 
   QImage image = m_PoleFigureLabel->pixmap()->toImage();
   image.save(file);

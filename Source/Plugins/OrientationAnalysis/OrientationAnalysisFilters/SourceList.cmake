@@ -22,6 +22,7 @@ set(_PublicFilters
   ChangeAngleRepresentation
   ConvertHexGridToSquareGrid
   ConvertOrientations
+  CreateLambertSphere
   EbsdToH5Ebsd
   EnsembleInfoReader
   FindAvgCAxes
@@ -53,6 +54,10 @@ set(_PublicFilters
   Stereographic3D
 )
 
+
+
+list(LENGTH _PublicFilters PluginNumFilters)
+set_property(GLOBAL PROPERTY PluginNumFilters ${PluginNumFilters})
 
 #--------------
 # Loop on all the filters adding each one. In this loop we default to making each filter exposed in the user

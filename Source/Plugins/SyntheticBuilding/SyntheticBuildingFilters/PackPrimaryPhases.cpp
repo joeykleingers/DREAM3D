@@ -52,11 +52,13 @@
 #include "SIMPLib/Common/ShapeType.h"
 #include "SIMPLib/DataArrays/NeighborList.hpp"
 #include "SIMPLib/FilterParameters/AbstractFilterParametersReader.h"
+#include "SIMPLib/FilterParameters/AttributeMatrixCreationFilterParameter.h"
 #include "SIMPLib/FilterParameters/AttributeMatrixSelectionFilterParameter.h"
 #include "SIMPLib/FilterParameters/BooleanFilterParameter.h"
 #include "SIMPLib/FilterParameters/DataArraySelectionFilterParameter.h"
 #include "SIMPLib/FilterParameters/InputFileFilterParameter.h"
 #include "SIMPLib/FilterParameters/LinkedBooleanFilterParameter.h"
+#include "SIMPLib/FilterParameters/LinkedChoicesFilterParameter.h"
 #include "SIMPLib/FilterParameters/OutputFileFilterParameter.h"
 #include "SIMPLib/FilterParameters/SeparatorFilterParameter.h"
 #include "SIMPLib/FilterParameters/StringFilterParameter.h"
@@ -99,12 +101,13 @@ public:
   , m_ShapeOps(shapeOps)
   , curFeature(cur_feature)
   {
+    size = 0;
     dims[0] = dimensions[0];
     dims[1] = dimensions[1];
     dims[2] = dimensions[2];
-    Invradcur[0] = 1.0 / radCur[0];
-    Invradcur[1] = 1.0 / radCur[1];
-    Invradcur[2] = 1.0 / radCur[2];
+    Invradcur[0] = 1.0f / radCur[0];
+    Invradcur[1] = 1.0f / radCur[1];
+    Invradcur[2] = 1.0f / radCur[2];
 
     res[0] = resolution[0];
     res[1] = resolution[1];
@@ -231,6 +234,8 @@ private:
 // Include the MOC generated file for this class
 #include "moc_PackPrimaryPhases.cpp"
 
+const QString PrimaryPhaseSyntheticShapeParametersName("Synthetic Shape Parameters (Primary Phase)");
+
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
@@ -254,6 +259,8 @@ PackPrimaryPhases::PackPrimaryPhases()
 , m_CsvOutputFile("")
 , m_PeriodicBoundaries(false)
 , m_WriteGoalAttributes(false)
+, m_SaveGeometricDescriptions(false)
+, m_NewAttributeMatrixPath(SIMPL::Defaults::SyntheticVolumeDataContainerName, PrimaryPhaseSyntheticShapeParametersName, "")
 , m_NeighborhoodsArrayName(SIMPL::FeatureData::Neighborhoods)
 , m_CentroidsArrayName(SIMPL::FeatureData::Centroids)
 , m_VolumesArrayName(SIMPL::FeatureData::Volumes)
@@ -364,8 +371,7 @@ void PackPrimaryPhases::setupFilterParameters()
     parameters.push_back(SIMPL_NEW_AM_SELECTION_FP("Cell Attribute Matrix", OutputCellAttributeMatrixPath, FilterParameter::RequiredArray, PackPrimaryPhases, req));
   }
   {
-    DataArraySelectionFilterParameter::RequirementType req =
-        DataArraySelectionFilterParameter::CreateRequirement(SIMPL::TypeNames::Bool, 1, AttributeMatrix::Type::Cell, IGeometry::Type::Image);
+    DataArraySelectionFilterParameter::RequirementType req = DataArraySelectionFilterParameter::CreateRequirement(SIMPL::TypeNames::Bool, 1, AttributeMatrix::Type::Cell, IGeometry::Type::Image);
     parameters.push_back(SIMPL_NEW_DA_SELECTION_FP("Mask", MaskArrayPath, FilterParameter::RequiredArray, PackPrimaryPhases, req));
   }
   parameters.push_back(SeparatorFilterParameter::New("Cell Ensemble Data", FilterParameter::RequiredArray));
@@ -426,6 +432,37 @@ void PackPrimaryPhases::setupFilterParameters()
   linkedProps << "CsvOutputFile";
   parameters.push_back(SIMPL_NEW_LINKED_BOOL_FP("Write Goal Attributes", WriteGoalAttributes, FilterParameter::Parameter, PackPrimaryPhases, linkedProps));
   parameters.push_back(SIMPL_NEW_OUTPUT_FILE_FP("Goal Attribute CSV File", CsvOutputFile, FilterParameter::Parameter, PackPrimaryPhases, "*.csv", "Comma Separated Data"));
+
+  {
+    LinkedChoicesFilterParameter::Pointer parameter = LinkedChoicesFilterParameter::New();
+    parameter->setHumanLabel("Save Shape Description Arrays");
+    parameter->setPropertyName("SaveGeometricDescriptions");
+    parameter->setSetterCallback(SIMPL_BIND_SETTER(PackPrimaryPhases, this, SaveGeometricDescriptions));
+    parameter->setGetterCallback(SIMPL_BIND_GETTER(PackPrimaryPhases, this, SaveGeometricDescriptions));
+
+    QVector<QString> choices;
+    choices.push_back("Save To New Attribute Matrix");
+    choices.push_back("Append To Existing Attribute Matrix");
+    choices.push_back("Do Not Save");
+    parameter->setChoices(choices);
+    QStringList linkedProps;
+    linkedProps << "NewAttributeMatrixPath"
+                << "SelectedAttributeMatrixPath";
+    parameter->setLinkedProperties(linkedProps);
+    parameter->setEditable(false);
+    parameter->setCategory(FilterParameter::Parameter);
+    parameters.push_back(parameter);
+  }
+
+  {
+    AttributeMatrixCreationFilterParameter::RequirementType req;
+    parameters.push_back(SIMPL_NEW_AM_CREATION_FP("New Attribute Matrix", NewAttributeMatrixPath, FilterParameter::Parameter, PackPrimaryPhases, req, 0));
+  }
+
+  {
+    AttributeMatrixSelectionFilterParameter::RequirementType req = AttributeMatrixSelectionFilterParameter::CreateRequirement(AttributeMatrix::Category::Feature);
+    parameters.push_back(SIMPL_NEW_AM_SELECTION_FP("Selected Attribute Matrix", SelectedAttributeMatrixPath, FilterParameter::Parameter, PackPrimaryPhases, req, 1));
+  }
 
 #if PPP_SHOW_DEBUG_OUTPUTS
   parameters.push_back(InputFileFilterParameter::New("Debug VTK File", "VtkOutputFile", getVtkOutputFile(), FilterParameter::Parameter, "*.vtk", "VTK File"));
@@ -571,8 +608,8 @@ void PackPrimaryPhases::dataCheck()
   if(m_StatsDataArray.lock() == nullptr)
   {
     QString ss = QObject::tr("Statistics array is not initialized correctly. The path is %1").arg(getInputStatsArrayPath().serialize());
-    setErrorCondition(-308);
-    notifyErrorMessage(getHumanLabel(), ss, -308);
+    setErrorCondition(-78000);
+    notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
   }
   if(getErrorCondition() >= 0)
   {
@@ -619,6 +656,17 @@ void PackPrimaryPhases::dataCheck()
 
   QVector<size_t> tDims(1, 0);
   m->createNonPrereqAttributeMatrix<AbstractFilter>(this, getOutputCellFeatureAttributeMatrixName(), tDims, AttributeMatrix::Type::CellFeature);
+
+  PackPrimaryPhases::SaveMethod saveMethod = static_cast<PackPrimaryPhases::SaveMethod>(getSaveGeometricDescriptions());
+  if(saveMethod == PackPrimaryPhases::SaveMethod::SaveToNew)
+  {
+    m->createNonPrereqAttributeMatrix<AbstractFilter>(this, getNewAttributeMatrixPath().getAttributeMatrixName(), tDims, AttributeMatrix::Type::CellFeature);
+  }
+  else if(saveMethod == PackPrimaryPhases::SaveMethod::AppendToExisting)
+  {
+    int err = 0;
+    m->getPrereqAttributeMatrix<AbstractFilter>(this, getSelectedAttributeMatrixPath().getAttributeMatrixName(), err);
+  }
 
   AttributeMatrix::Pointer outEnsembleAttrMat = AttributeMatrix::NullPointer();
   if(m->doesAttributeMatrixExist(getOutputCellEnsembleAttributeMatrixName()))
@@ -712,18 +760,41 @@ void PackPrimaryPhases::dataCheck()
     m_NumFeatures = m_NumFeaturesPtr.lock()->getPointer(0);
   }
 
-  if(m_WriteGoalAttributes == true && getCsvOutputFile().isEmpty() == true)
+  if(m_WriteGoalAttributes == true)
   {
-    QString ss = QObject::tr("The Csv output file must be set").arg(ClassName());
-    setErrorCondition(-1);
-    notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
+    if(getCsvOutputFile().isEmpty() == true)
+    {
+      QString ss = QObject::tr("The goal attribute output file must be set");
+      setErrorCondition(-78001);
+      notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
+    }
+
+    QFileInfo fi(getCsvOutputFile());
+
+    QDir parentPath = fi.path();
+    if(parentPath.exists() == false)
+    {
+      QString ss = QObject::tr("The directory path for the GoalAttribute output file does not exist. The application will attempt to create this path during execution of the filter");
+      notifyWarningMessage(getHumanLabel(), ss, -1);
+    }
   }
 
-  if(m_HaveFeatures == true && getFeatureInputFile().isEmpty() == true)
+  if(m_HaveFeatures == true)
   {
-    QString ss = QObject::tr("The Feature file must be set");
-    setErrorCondition(-1);
-    notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
+    QFileInfo fi(getFeatureInputFile());
+
+    if(getFeatureInputFile().isEmpty() == true)
+    {
+      QString ss = QObject::tr("The input feature file must be set");
+      setErrorCondition(-78003);
+      notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
+    }
+    else if(fi.exists() == false)
+    {
+      QString ss = QObject::tr("The input feature file does not exist");
+      setErrorCondition(-78004);
+      notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
+    }
   }
 }
 
@@ -751,13 +822,8 @@ void PackPrimaryPhases::preflight()
     return;
   }
 
-  attrMat->removeAttributeArray(m_EquivalentDiametersArrayName);
-  attrMat->removeAttributeArray(m_Omega3sArrayName);
-  attrMat->removeAttributeArray(m_AxisEulerAnglesArrayName);
-  attrMat->removeAttributeArray(m_AxisLengthsArrayName);
-  attrMat->removeAttributeArray(m_VolumesArrayName);
-  attrMat->removeAttributeArray(m_CentroidsArrayName);
-  attrMat->removeAttributeArray(m_NeighborhoodsArrayName);
+  moveShapeDescriptions();
+
   setInPreflight(false);
 }
 
@@ -837,15 +903,9 @@ void PackPrimaryPhases::execute()
     return;
   }
 
+  moveShapeDescriptions();
+
   DataContainer::Pointer m = getDataContainerArray()->getDataContainer(getOutputCellAttributeMatrixPath().getDataContainerName());
-  AttributeMatrix::Pointer cellFeatureAttrMat = m->getAttributeMatrix(m_OutputCellFeatureAttributeMatrixName);
-  cellFeatureAttrMat->removeAttributeArray(m_EquivalentDiametersArrayName);
-  cellFeatureAttrMat->removeAttributeArray(m_Omega3sArrayName);
-  cellFeatureAttrMat->removeAttributeArray(m_AxisEulerAnglesArrayName);
-  cellFeatureAttrMat->removeAttributeArray(m_AxisLengthsArrayName);
-  cellFeatureAttrMat->removeAttributeArray(m_VolumesArrayName);
-  cellFeatureAttrMat->removeAttributeArray(m_CentroidsArrayName);
-  cellFeatureAttrMat->removeAttributeArray(m_NeighborhoodsArrayName);
 
   AttributeMatrix::Pointer ensembleAttrMat = getDataContainerArray()->getAttributeMatrix(getInputPhaseNamesArrayPath());
   IDataArray::Pointer inputPhaseNames = ensembleAttrMat->getAttributeArray(getInputPhaseNamesArrayPath().getDataArrayName());
@@ -871,7 +931,7 @@ int32_t PackPrimaryPhases::writeVtkFile(int32_t* featureOwners, int32_t* exclusi
   {
     qDebug() << "m_VtkOutputFile: " << m_VtkOutputFile << "\n";
     notifyErrorMessage(getHumanLabel(), "Could not open Vtk File for writing from PackFeatures", -1);
-    setErrorCondition(-55);
+    setErrorCondition(-78005);
     return -1;
   }
   outFile << "# vtk DataFile Version 2.0"
@@ -956,7 +1016,7 @@ void PackPrimaryPhases::loadFeatures()
   if(!inFile)
   {
     QString ss = QObject::tr("Failed to open: %1").arg(getFeatureInputFile());
-    setErrorCondition(-1);
+    setErrorCondition(-78006);
     notifyErrorMessage(getHumanLabel(), ss, -1);
   }
   int32_t numFeatures = 0;
@@ -1015,7 +1075,6 @@ void PackPrimaryPhases::placeFeatures(Int32ArrayType::Pointer featureOwnersPtr)
     writeErrorFile = outFile.is_open();
   }
 
-  setErrorCondition(0);
   m_Seed = QDateTime::currentMSecsSinceEpoch();
   SIMPL_RANDOMNG_NEW_SEEDED(m_Seed);
 
@@ -1081,7 +1140,7 @@ void PackPrimaryPhases::placeFeatures(Int32ArrayType::Pointer featureOwnersPtr)
                          .arg(i)
                          .arg(i)
                          .arg(m_PhaseTypes[i]);
-        setErrorCondition(-666);
+        setErrorCondition(-78007);
         notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
         return;
       }
@@ -1299,7 +1358,7 @@ void PackPrimaryPhases::placeFeatures(Int32ArrayType::Pointer featureOwnersPtr)
       float avg = Neighdist[0]->getValue(j);
       float stdev = Neighdist[1]->getValue(j);
       m_NeighborDistStep[i] = 2.0f;
-      float denominatorConst = 1.0 / sqrtf(2.0f * stdev * stdev); // Calculate it here rather than calculating the same thing multiple times below
+      float denominatorConst = 1.0f / sqrtf(2.0f * stdev * stdev); // Calculate it here rather than calculating the same thing multiple times below
       for(size_t k = 0; k < 40; k++)
       {
         input = (float(k + 1) * m_NeighborDistStep[i]);
@@ -1646,7 +1705,7 @@ void PackPrimaryPhases::placeFeatures(Int32ArrayType::Pointer featureOwnersPtr)
     if(err < 0)
     {
       QString ss = QObject::tr("Error writing Vtk file");
-      setErrorCondition(-1);
+      setErrorCondition(-78008);
       notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
       return;
     }
@@ -1793,11 +1852,10 @@ void PackPrimaryPhases::generateFeature(int32_t phase, Feature_t* feature, uint3
   float mf = omega3[0]->getValue(diameter);
   float s = omega3[1]->getValue(diameter);
   float omega3f = static_cast<float>(rg.genrand_beta(mf, s));
-  if (shapeclass == static_cast<ShapeType::EnumType>(ShapeType::Type::Ellipsoid))
+  if(shapeclass == static_cast<ShapeType::EnumType>(ShapeType::Type::Ellipsoid))
   {
     omega3f = 1;
   }
-
   feature->m_Volumes = vol;
   feature->m_EquivalentDiameters = diam;
   feature->m_AxisLengths[0] = r1;
@@ -2434,15 +2492,14 @@ void PackPrimaryPhases::insertFeature(size_t gnum)
   uint32_t shapeclass = m_ShapeTypes[m_FeaturePhases[gnum]];
 
   // Bail if the shapeclass is not one of our enumerated types
-  if (shapeclass >= static_cast<ShapeType::EnumType>(ShapeType::Type::ShapeTypeEnd))
+  if(shapeclass >= static_cast<ShapeType::EnumType>(ShapeType::Type::ShapeTypeEnd))
   {
     QString ss = QObject::tr("Undefined shape class in shape types array with path %1").arg(m_InputShapeTypesArrayPath.serialize());
-    setErrorCondition(-666);
+    setErrorCondition(-78009);
     notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
     return;
   }
 
-  // init any values for each of the Shape Ops
   // init any values for each of the Shape Ops
   for(size_t iter = 0; iter < m_ShapeOps.size(); iter++)
   {
@@ -2613,7 +2670,7 @@ void PackPrimaryPhases::assignVoxels()
     if(shapeclass != 0 && shapeclass != 1 && shapeclass != 2 && shapeclass != 3)
     {
       QString ss = QObject::tr("Undefined shape class in shape types array with path %1").arg(m_InputShapeTypesArrayPath.serialize());
-      setErrorCondition(-666);
+      setErrorCondition(-78010);
       notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
       return;
     }
@@ -3192,7 +3249,7 @@ int32_t PackPrimaryPhases::estimateNumFeatures(size_t xpoints, size_t ypoints, s
   if(m_StatsDataArray.lock().get() == nullptr)
   {
     QString ss = QObject::tr("Stats Array Not Initialized correctly");
-    setErrorCondition(-308);
+    setErrorCondition(-78011);
     notifyErrorMessage(getHumanLabel(), ss, -308);
     return 1;
   }
@@ -3286,7 +3343,6 @@ int32_t PackPrimaryPhases::estimateNumFeatures(size_t xpoints, size_t ypoints, s
 // -----------------------------------------------------------------------------
 void PackPrimaryPhases::writeGoalAttributes()
 {
-  setErrorCondition(0);
   DataContainer::Pointer m = getDataContainerArray()->getDataContainer(getOutputCellAttributeMatrixPath().getDataContainerName());
 
   size_t totalFeatures = m->getAttributeMatrix(m_OutputCellFeatureAttributeMatrixName)->getNumberOfTuples();
@@ -3298,7 +3354,7 @@ void PackPrimaryPhases::writeGoalAttributes()
   if(!parentPath.mkpath("."))
   {
     QString ss = QObject::tr("Error creating parent path '%1'").arg(parentPath.absolutePath());
-    setErrorCondition(-1);
+    setErrorCondition(-78013);
     notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
     return;
   }
@@ -3307,7 +3363,7 @@ void PackPrimaryPhases::writeGoalAttributes()
   if(!outFile.open(QIODevice::WriteOnly))
   {
     QString msg = QObject::tr("CSV Output file could not be opened: %1").arg(getCsvOutputFile());
-    setErrorCondition(-200);
+    setErrorCondition(-78014);
     notifyErrorMessage(getHumanLabel(), msg, getErrorCondition());
     return;
   }
@@ -3380,6 +3436,75 @@ void PackPrimaryPhases::writeGoalAttributes()
       data[p]->printTuple(dStream, i, space);
     }
     dStream << "\n";
+  }
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+void PackPrimaryPhases::moveShapeDescriptions()
+{
+  DataContainer::Pointer m = getDataContainerArray()->getDataContainer(getOutputCellAttributeMatrixPath().getDataContainerName());
+
+  QStringList names;
+  names << m_EquivalentDiametersArrayName << m_Omega3sArrayName << m_AxisEulerAnglesArrayName << m_AxisLengthsArrayName << m_VolumesArrayName << m_CentroidsArrayName << m_NeighborhoodsArrayName;
+
+  AttributeMatrix::Pointer cellFeatureAttrMat = m->getAttributeMatrix(m_OutputCellFeatureAttributeMatrixName);
+  QVector<size_t> tDims(1, 0);
+
+  QList<IDataArray::Pointer> attrArrays;
+  foreach(const QString name, names)
+  {
+    IDataArray::Pointer arrayPtr = cellFeatureAttrMat->removeAttributeArray(name);
+    if(arrayPtr != IDataArray::NullPointer())
+    {
+      attrArrays.push_back(arrayPtr);
+    }
+  }
+
+  PackPrimaryPhases::SaveMethod saveMethod = static_cast<PackPrimaryPhases::SaveMethod>(getSaveGeometricDescriptions());
+  if(saveMethod == PackPrimaryPhases::SaveMethod::SaveToNew)
+  {
+    AttributeMatrix::Pointer newAM = getDataContainerArray()->getAttributeMatrix(getNewAttributeMatrixPath());
+    if(newAM != AttributeMatrix::NullPointer())
+    {
+      if(attrArrays.size() > 0)
+      {
+        size_t incomingArrayTupleCount = attrArrays[0]->getNumberOfTuples();
+        size_t newAMTupleCount = newAM->getTupleDimensions()[0];
+        tDims[0] = incomingArrayTupleCount + newAMTupleCount;
+        newAM->resizeAttributeArrays(tDims);
+      }
+
+      foreach(IDataArray::Pointer incomingArray, attrArrays)
+      {
+        newAM->addAttributeArray(incomingArray->getName(), incomingArray);
+      }
+    }
+  }
+  else if(saveMethod == PackPrimaryPhases::SaveMethod::AppendToExisting)
+  {
+    AttributeMatrix::Pointer existingAM = getDataContainerArray()->getAttributeMatrix(getSelectedAttributeMatrixPath());
+    if(existingAM != AttributeMatrix::NullPointer())
+    {
+      if(attrArrays.size() > 0)
+      {
+        size_t incomingArrayTupleCount = attrArrays[0]->getNumberOfTuples();
+        size_t existingAMTupleCount = existingAM->getTupleDimensions()[0];
+        tDims[0] = incomingArrayTupleCount + existingAMTupleCount;
+        existingAM->resizeAttributeArrays(tDims);
+      }
+
+      foreach(IDataArray::Pointer incomingArray, attrArrays)
+      {
+        int err = 0;
+        IDataArray::Pointer existingArray = existingAM->getPrereqIDataArray<IDataArray, AbstractFilter>(this, incomingArray->getName(), err);
+        if(existingArray != IDataArray::NullPointer())
+        {
+          existingArray->copyFromArray(tDims[0], incomingArray);
+        }
+      }
+    }
   }
 }
 

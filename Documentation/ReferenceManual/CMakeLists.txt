@@ -8,7 +8,7 @@
 #
 # -----------------------------------------------------------------------------
 PROJECT(DREAM3DReferenceManual)
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.6.0)
 
 if(NOT DEFINED PROJECT_RESOURCES_DIR)
 set(PROJECT_RESOURCES_DIR ${PROJECT_SOURCE_DIR}/Resources)
@@ -45,22 +45,23 @@ set(DOCUMENTATION_SOURCE_FILES
   \"${PROJECT_SOURCE_DIR}/ReleaseNotes/ReleaseNotes_6_1_0.md\"
   \"${PROJECT_SOURCE_DIR}/ReleaseNotes/ReleaseNotes_6_2_0.md\"
   \"${PROJECT_SOURCE_DIR}/ReleaseNotes/ReleaseNotes_6_3_0.md\"
+  \"${PROJECT_SOURCE_DIR}/ReleaseNotes/ReleaseNotes_6_4_0.md\"
 )
 
 option(DREAM3D_INCLUDE_DEVELOPER_DOCS "Include the Developer Documentation in the DOxygen Generated output." ON)
 if(DREAM3D_INCLUDE_DEVELOPER_DOCS)
   set(DOCUMENTATION_SOURCE_FILES "${DOCUMENTATION_SOURCE_FILES}"
-    \"${PROJECT_SOURCE_DIR}/Developer/BuildDREAM3D.md\"
     \"${PROJECT_SOURCE_DIR}/Developer/CodeGuidelines.md\"
     \"${PROJECT_SOURCE_DIR}/Developer/CompilerSuite.md\"
-    \"${PROJECT_SOURCE_DIR}/Developer/Compiling_DREAM3D.md\"
-    \"${PROJECT_SOURCE_DIR}/Developer/Compiling_External_Libraries.md\"
-    \"${PROJECT_SOURCE_DIR}/Developer/ConfigureDREAM3D.md\"
+    \"${PROJECT_SOURCE_DIR}/Developer/CreatingAFilter.md\"
     \"${PROJECT_SOURCE_DIR}/Developer/Developer.dox\"
-    \"${PROJECT_SOURCE_DIR}/Developer/DevHelperTutorial.md\"
-    \"${PROJECT_SOURCE_DIR}/Developer/SDKDownload.md\"
+    \"${PROJECT_SOURCE_DIR}/Developer/Linux_Configuring_and_Building_DREAM3D.md\"
+    \"${PROJECT_SOURCE_DIR}/Developer/OSX_Configuring_and_Building_DREAM3D.md\"
+    \"${PROJECT_SOURCE_DIR}/Developer/RepositoryLayout.md\"
+    \"${PROJECT_SOURCE_DIR}/Developer/SDKInstall.md\"
     \"${PROJECT_SOURCE_DIR}/Developer/SourceDownload.md\"
-    \"${PROJECT_SOURCE_DIR}/Developer/Versioning.md\"
+    \"${PROJECT_SOURCE_DIR}/Developer/Windows_Configuring_and_Building_DREAM3D.md\"
+    \"${PROJECT_SOURCE_DIR}/Developer/WritingAFilter.md\"
   )
 endif()
 
@@ -108,7 +109,9 @@ foreach( group ${DREAM3D_DOC_GROUPS_FILE_LIST} )
   foreach(filterPath ${filter_path_list})
     get_filename_component(filter  ${filterPath} NAME_WE)
     get_filename_component(group_path ${filterPath} PATH)
-    list(APPEND DOXYGEN_IMAGE_DIRS "\"${group_path}\"")
+    if(EXISTS "${group_path}/Images")
+      list(APPEND DOXYGEN_IMAGE_DIRS "\"${group_path}/Images\"")
+    endif()
     string(TOLOWER ${filter} filter_Lower)
     file(APPEND ${DREAM3DReferenceManual_BINARY_DIR}/FilterDocumentation.dox "@subpage ${filter_Lower}\n\n")
     list(APPEND DOCUMENTATION_SOURCE_FILES "\"${filterPath}\"")

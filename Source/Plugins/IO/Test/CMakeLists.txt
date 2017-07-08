@@ -63,7 +63,6 @@ ReadHDF5FileTest
   VtkStruturedPointsReaderTest
   EnsembleInfoReaderTest
   ExportDataTest
-  ImportASCIIDataTest
 )
 
 
