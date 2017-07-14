@@ -79,11 +79,6 @@
 // -----------------------------------------------------------------------------
 StatsGenFeatureSizeWidget::StatsGenFeatureSizeWidget(QWidget* parent)
 : QWidget(parent)
-, m_Mu(1.0f)
-, m_Sigma(0.1f)
-, m_MinCutOff(5.0f)
-, m_MaxCutOff(5.0f)
-, m_BinStep(0.5f)
 , m_PhaseIndex(-1)
 , m_CrystalStructure(Ebsd::CrystalStructure::Cubic_High)
 {
@@ -113,12 +108,12 @@ void StatsGenFeatureSizeWidget::setupGui()
 
   m_MuValidator = new QDoubleValidator(m_Mu_SizeDistribution);
   m_MuValidator->setLocale(loc);
-  m_MuValidator->setRange(0.0001, 10.0, 6);
+  m_MuValidator->setRange(-1000000, 1000000, 6);
   m_Mu_SizeDistribution->setValidator(m_MuValidator);
 
   m_SigmaValidator = new QDoubleValidator(m_Sigma_SizeDistribution);
   m_SigmaValidator->setLocale(loc);
-  m_SigmaValidator->setRange(0.0000, 5.0, 6);
+  m_SigmaValidator->setRange(0.0000, 10.0, 6);
   m_Sigma_SizeDistribution->setValidator(m_SigmaValidator);
 
   m_MinCutoffValidator = new QDoubleValidator(0.000, std::numeric_limits<double>::infinity(), 6, m_MinSigmaCutOff);
@@ -224,6 +219,8 @@ void StatsGenFeatureSizeWidget::userEditedPlotData()
 // -----------------------------------------------------------------------------
 void StatsGenFeatureSizeWidget::resetUI()
 {
+  QLocale loc = QLocale::system();
+
   m_Mu_SizeDistribution->setEnabled(true);
   m_Sigma_SizeDistribution->setEnabled(true);
   m_MinSigmaCutOff->setEnabled(true);
@@ -233,8 +230,8 @@ void StatsGenFeatureSizeWidget::resetUI()
   distributionTypeCombo->setEnabled(true);
 
   this->blockSignals(true);
-  m_Mu_SizeDistribution->setText("1.0");
-  m_Sigma_SizeDistribution->setText("0.1");
+  m_Mu_SizeDistribution->setText(loc.toString(StatsGeneratorConstants::k_Mu));
+  m_Sigma_SizeDistribution->setText(loc.toString(StatsGeneratorConstants::k_Sigma));
   m_MinSigmaCutOff->setText("5.0");
   m_MaxSigmaCutOff->setText("5.0");
   distributionTypeCombo->setCurrentIndex(0);
@@ -354,16 +351,16 @@ bool StatsGenFeatureSizeWidget::validateMuSigma()
 // -----------------------------------------------------------------------------
 //
 // -----------------------------------------------------------------------------
-void StatsGenFeatureSizeWidget::on_m_FeatureESD_editingFinished()
-{
-  QLocale loc = QLocale::system();
-  bool ok = false;
-  float esd = loc.toFloat(m_FeatureESD->text(), &ok);
-  float mu = std::log(esd);
-  m_EsdUpdated = true;
-  m_Mu_SizeDistribution->setText(loc.toString(mu));
-  m_EsdUpdated = false;
-}
+//void StatsGenFeatureSizeWidget::on_m_FeatureESD_editingFinished()
+//{
+//  QLocale loc = QLocale::system();
+//  bool ok = false;
+//  float esd = loc.toFloat(m_FeatureESD->text(), &ok);
+//  float mu = std::log(esd);
+//  m_EsdUpdated = true;
+//  m_Mu_SizeDistribution->setText(loc.toString(mu));
+//  m_EsdUpdated = false;
+//}
 
 // -----------------------------------------------------------------------------
 //
@@ -381,8 +378,9 @@ void StatsGenFeatureSizeWidget::on_m_Mu_SizeDistribution_textChanged(const QStri
     QLocale loc = QLocale::system();
     m_FeatureESD->blockSignals(true);
     bool ok = false;
+    float sigma = loc.toFloat(m_Sigma_SizeDistribution->text(), &ok);
     float mu = loc.toFloat(m_Mu_SizeDistribution->text(), &ok);
-    float esd = std::exp(mu);
+    float esd = std::exp(mu + (sigma*sigma)/2.0f);
     m_FeatureESD->setText(loc.toString(esd));
     m_FeatureESD->blockSignals(false);
   }
@@ -408,6 +406,19 @@ void StatsGenFeatureSizeWidget::on_m_Sigma_SizeDistribution_textChanged(const QS
   {
     return;
   }
+
+  if(!m_EsdUpdated)
+  {
+    QLocale loc = QLocale::system();
+    m_FeatureESD->blockSignals(true);
+    bool ok = false;
+    float sigma = loc.toFloat(m_Sigma_SizeDistribution->text(), &ok);
+    float mu = loc.toFloat(m_Mu_SizeDistribution->text(), &ok);
+    float esd = std::exp(mu + (sigma*sigma)/2.0f);
+    m_FeatureESD->setText(loc.toString(esd));
+    m_FeatureESD->blockSignals(false);
+  }
+
   if(updateSizeDistributionPlot() < 0)
   {
     return;
@@ -790,11 +801,6 @@ void StatsGenFeatureSizeWidget::plotSizeDistribution()
     return;
   }
 
-  m_Mu = mu;
-  m_Sigma = sigma;
-  m_MaxCutOff = maxCutOff;
-  m_MinCutOff = minCutOff;
-  m_BinStep = stepSize;
   m_BinSizes = binSizes;
 }
 
@@ -850,3 +856,79 @@ int StatsGenFeatureSizeWidget::getStatisticsData(PrimaryStatsData* primaryStatsD
 
   return err;
 }
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+float StatsGenFeatureSizeWidget::getMu()
+{
+  QLocale loc = QLocale::system();
+  bool ok = false;
+  float f = loc.toFloat(m_Mu_SizeDistribution->text(), &ok);
+  if(!ok)
+  {
+    f = std::numeric_limits<float>::quiet_NaN();
+  }
+  return f;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+float StatsGenFeatureSizeWidget::getSigma()
+{
+  QLocale loc = QLocale::system();
+  bool ok = false;
+  float f = loc.toFloat(m_Sigma_SizeDistribution->text(), &ok);
+  if(!ok)
+  {
+    f = std::numeric_limits<float>::quiet_NaN();
+  }
+  return f;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+float StatsGenFeatureSizeWidget::getMinCutOff()
+{
+  QLocale loc = QLocale::system();
+  bool ok = false;
+  float f = loc.toFloat(m_MinSigmaCutOff->text(), &ok);
+  if(!ok)
+  {
+    f = std::numeric_limits<float>::quiet_NaN();
+  }
+  return f;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+float StatsGenFeatureSizeWidget::getMaxCutOff()
+{
+  QLocale loc = QLocale::system();
+  bool ok = false;
+  float f = loc.toFloat(m_MaxSigmaCutOff->text(), &ok);
+  if(!ok)
+  {
+    f = std::numeric_limits<float>::quiet_NaN();
+  }
+  return f;
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+float StatsGenFeatureSizeWidget::getBinStep()
+{
+  QLocale loc = QLocale::system();
+  bool ok = false;
+  float f = loc.toFloat(m_BinStepSize->text(), &ok);
+  if(!ok)
+  {
+    f = std::numeric_limits<float>::quiet_NaN();
+  }
+  return f;
+}
+
