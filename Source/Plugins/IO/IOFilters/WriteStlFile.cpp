@@ -150,6 +150,7 @@ void WriteStlFile::initialize()
 void WriteStlFile::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
 
   TriangleGeom::Pointer triangles = getDataContainerArray()->getPrereqGeometryFromDataContainer<TriangleGeom, AbstractFilter>(this, getSurfaceMeshFaceLabelsArrayPath().getDataContainerName());
 
@@ -215,6 +216,7 @@ void WriteStlFile::execute()
 {
   int32_t err = 0;
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {
@@ -265,11 +267,11 @@ void WriteStlFile::execute()
   }
 
   unsigned char data[50];
-  float* normal = (float*)data;
-  float* vert1 = (float*)(data + 12);
-  float* vert2 = (float*)(data + 24);
-  float* vert3 = (float*)(data + 36);
-  uint16_t* attrByteCount = (uint16_t*)(data + 48);
+  float* normal = reinterpret_cast<float*>(data);
+  float* vert1 = reinterpret_cast<float*>(data + 12);
+  float* vert2 = reinterpret_cast<float*>(data + 24);
+  float* vert3 = reinterpret_cast<float*>(data + 36);
+  uint16_t* attrByteCount = reinterpret_cast<uint16_t*>(data + 48);
   *attrByteCount = 0;
 
   size_t totalWritten = 0;
@@ -376,6 +378,7 @@ void WriteStlFile::execute()
   }
 
   setErrorCondition(0);
+  setWarningCondition(0);
   notifyStatusMessage(getHumanLabel(), "Complete");
 
   return;
@@ -396,8 +399,10 @@ int32_t WriteStlFile::writeHeader(FILE* f, const QString& header, int32_t triCou
   {
     headlength = header.length();
   }
+
+  std::string c_str = header.toStdString();
   ::memset(h, 0, 80);
-  ::memcpy(h, header.data(), headlength);
+  ::memcpy(h, c_str.data(), headlength);
   // Return the number of bytes written - which should be 80
   fwrite(h, 1, 80, f);
   fwrite(&triCount, 1, 4, f);
@@ -414,7 +419,7 @@ int32_t WriteStlFile::writeNumTrianglesToFile(const QString& filename, int32_t t
 
   FILE* out = fopen(filename.toLatin1().data(), "r+b");
   fseek(out, 80L, SEEK_SET);
-  fwrite((char*)(&triCount), 1, 4, out);
+  fwrite(reinterpret_cast<char*>(&triCount), 1, 4, out);
   fclose(out);
 
   return err;

@@ -180,6 +180,7 @@ void FindSchmids::initialize()
 void FindSchmids::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   DataArrayPath tempPath;
 
   QVector<size_t> cDims(1, 1);
@@ -294,6 +295,7 @@ void FindSchmids::preflight()
 void FindSchmids::execute()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {
@@ -421,7 +423,7 @@ const QString FindSchmids::getGroupName()
 // -----------------------------------------------------------------------------
 const QString FindSchmids::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::CrystallographicFilters;
+  return SIMPL::FilterSubGroups::CrystallographyFilters;
 }
 
 // -----------------------------------------------------------------------------

@@ -150,6 +150,7 @@ void FindFeatureNeighborCAxisMisalignments::initialize()
 void FindFeatureNeighborCAxisMisalignments::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   initialize();
 
   DataArrayPath tempPath;
@@ -234,6 +235,7 @@ void FindFeatureNeighborCAxisMisalignments::preflight()
 void FindFeatureNeighborCAxisMisalignments::execute()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {
@@ -399,7 +401,7 @@ const QString FindFeatureNeighborCAxisMisalignments::getGroupName()
 // -----------------------------------------------------------------------------
 const QString FindFeatureNeighborCAxisMisalignments::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::CrystallographicFilters;
+  return SIMPL::FilterSubGroups::CrystallographyFilters;
 }
 
 // -----------------------------------------------------------------------------

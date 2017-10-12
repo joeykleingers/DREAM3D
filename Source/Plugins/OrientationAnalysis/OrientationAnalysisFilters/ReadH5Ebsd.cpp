@@ -187,7 +187,7 @@ void ReadH5Ebsd::readVolumeInfo()
   QFileInfo fi(m_InputFile);
   if(m_InputFile.isEmpty() == true)
   {
-    QString ss = QObject::tr("%1: The H5Ebsd file must exist and the Manufacturer must be set correctly in the file").arg(getHumanLabel());
+    QString ss = QObject::tr("The input file must be set for property %1").arg("InputFile");
     setErrorCondition(-1);
     notifyErrorMessage(getHumanLabel(), ss, -1);
     return;
@@ -283,6 +283,7 @@ void ReadH5Ebsd::initialize()
 void ReadH5Ebsd::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   initialize();
 
   DataArrayPath tempPath;

@@ -193,6 +193,7 @@ void ReadEdaxH5Data::dataCheck()
   m_FileWasRead = false;
 
   setErrorCondition(0);
+  setWarningCondition(0);
   DataArrayPath tempPath;
 
   DataContainer::Pointer m = getDataContainerArray()->createNonPrereqDataContainer<AbstractFilter>(this, getDataContainerName());
@@ -229,7 +230,7 @@ void ReadEdaxH5Data::dataCheck()
 
   if(m_InputFile.isEmpty() == true && m_Manufacturer == Ebsd::UnknownManufacturer)
   {
-    QString ss = QObject::tr("The input file must be set");
+    QString ss = QObject::tr("The input file must be set for property %1").arg("InputFile");
     setErrorCondition(-1);
     notifyErrorMessage(getHumanLabel(), ss, -1);
     return;
@@ -698,6 +699,7 @@ void ReadEdaxH5Data::copyRawEbsdData(H5OIMReader* reader, QVector<size_t>& tDims
 void ReadEdaxH5Data::execute()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {

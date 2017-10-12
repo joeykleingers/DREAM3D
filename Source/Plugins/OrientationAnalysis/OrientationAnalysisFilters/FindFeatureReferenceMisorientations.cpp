@@ -180,6 +180,7 @@ void FindFeatureReferenceMisorientations::initialize()
 void FindFeatureReferenceMisorientations::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   DataArrayPath tempPath;
 
   getDataContainerArray()->getPrereqGeometryFromDataContainer<ImageGeom, AbstractFilter>(this, getFeatureIdsArrayPath().getDataContainerName());
@@ -290,6 +291,7 @@ void FindFeatureReferenceMisorientations::preflight()
 void FindFeatureReferenceMisorientations::execute()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {
@@ -446,7 +448,7 @@ const QString FindFeatureReferenceMisorientations::getGroupName()
 // -----------------------------------------------------------------------------
 const QString FindFeatureReferenceMisorientations::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::CrystallographicFilters;
+  return SIMPL::FilterSubGroups::CrystallographyFilters;
 }
 
 // -----------------------------------------------------------------------------

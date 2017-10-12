@@ -111,6 +111,7 @@ void FindCAxisLocations::initialize()
 void FindCAxisLocations::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   DataArrayPath tempPath;
 
   QVector<size_t> cDims(1, 4);
@@ -150,6 +151,7 @@ void FindCAxisLocations::preflight()
 void FindCAxisLocations::execute()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {
@@ -243,7 +245,7 @@ const QString FindCAxisLocations::getGroupName()
 // -----------------------------------------------------------------------------
 const QString FindCAxisLocations::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::CrystallographicFilters;
+  return SIMPL::FilterSubGroups::CrystallographyFilters;
 }
 
 // -----------------------------------------------------------------------------

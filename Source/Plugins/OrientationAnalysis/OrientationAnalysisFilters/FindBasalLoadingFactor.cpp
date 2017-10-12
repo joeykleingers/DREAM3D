@@ -120,6 +120,7 @@ void FindBasalLoadingFactor::initialize()
 void FindBasalLoadingFactor::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
 
   QVector<size_t> dims(1, 4);
   m_AvgQuatsPtr =
@@ -157,6 +158,7 @@ void FindBasalLoadingFactor::preflight()
 void FindBasalLoadingFactor::execute()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {
@@ -261,7 +263,7 @@ const QString FindBasalLoadingFactor::getGroupName()
 // -----------------------------------------------------------------------------
 const QString FindBasalLoadingFactor::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::CrystallographicFilters;
+  return SIMPL::FilterSubGroups::CrystallographyFilters;
 }
 
 // -----------------------------------------------------------------------------

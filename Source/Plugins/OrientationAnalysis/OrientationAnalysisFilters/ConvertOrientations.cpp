@@ -138,6 +138,7 @@ void ConvertOrientations::initialize()
 void ConvertOrientations::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
 
   if(getInputType() == getOutputType())
   {
@@ -170,6 +171,29 @@ void ConvertOrientations::dataCheck()
   // Figure out what kind of Array the user selected
   // Get the input data and create the output Data appropriately
   IDataArray::Pointer iDataArrayPtr = getDataContainerArray()->getPrereqIDataArrayFromPath<IDataArray, AbstractFilter>(this, getInputOrientationArrayPath());
+  if(getErrorCondition() < 0)
+  {
+    return;
+  }
+  int numComps = iDataArrayPtr->getNumberOfComponents();
+  QVector<int32_t> componentCounts = OrientationConverter<float>::GetComponentCounts();
+  if(numComps != componentCounts[getInputType()])
+  {
+    QString sizeNameMappingString;
+    QTextStream strm(&sizeNameMappingString);
+    QVector<QString> names = OrientationConverter<float>::GetOrientationTypeStrings();
+    for(int i = 0; i < OrientationConverter<float>::GetMaxIndex() + 1; i++)
+    {
+      strm << "[" << names[i] << "=" << componentCounts[i] << "] ";
+    }
+
+    QString ss = QObject::tr("The number of components (%1) of the input array does not match the required number of components for the input type (%2). These are the required Component counts. %3")
+                     .arg(numComps)
+                     .arg(componentCounts[getInputType()])
+                     .arg(sizeNameMappingString);
+    setErrorCondition(-1006);
+    notifyErrorMessage(getHumanLabel(), ss, getErrorCondition());
+  }
 
   DataArrayPath outputArrayPath = getInputOrientationArrayPath();
   outputArrayPath.setDataArrayName(getOutputOrientationArrayName());
@@ -177,7 +201,6 @@ void ConvertOrientations::dataCheck()
   FloatArrayType::Pointer fArray = std::dynamic_pointer_cast<FloatArrayType>(iDataArrayPtr);
   if(nullptr != fArray.get())
   {
-    QVector<int32_t> componentCounts = OrientationConverter<float>::GetComponentCounts();
     QVector<size_t> outputCDims(1, componentCounts[getOutputType()]);
     getDataContainerArray()->createNonPrereqArrayFromPath<DataArray<float>, AbstractFilter, float>(this, outputArrayPath, 0, outputCDims);
   }
@@ -185,7 +208,6 @@ void ConvertOrientations::dataCheck()
   DoubleArrayType::Pointer dArray = std::dynamic_pointer_cast<DoubleArrayType>(iDataArrayPtr);
   if(nullptr != dArray.get())
   {
-    QVector<int32_t> componentCounts = OrientationConverter<double>::GetComponentCounts();
     QVector<size_t> outputCDims(1, componentCounts[getOutputType()]);
     getDataContainerArray()->createNonPrereqArrayFromPath<DataArray<double>, AbstractFilter, double>(this, outputArrayPath, 0, outputCDims);
   }
@@ -249,6 +271,7 @@ template <typename T> void generateRepresentation(ConvertOrientations* filter, t
 void ConvertOrientations::execute()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {

@@ -144,6 +144,7 @@ void FindAvgOrientations::initialize()
 void FindAvgOrientations::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
 
   QVector<DataArrayPath> dataArrayPaths;
 
@@ -227,6 +228,7 @@ void FindAvgOrientations::preflight()
 void FindAvgOrientations::execute()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   dataCheck();
   if(getErrorCondition() < 0)
   {
@@ -335,7 +337,7 @@ const QString FindAvgOrientations::getGroupName()
 // -----------------------------------------------------------------------------
 const QString FindAvgOrientations::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::CrystallographicFilters;
+  return SIMPL::FilterSubGroups::CrystallographyFilters;
 }
 
 // -----------------------------------------------------------------------------

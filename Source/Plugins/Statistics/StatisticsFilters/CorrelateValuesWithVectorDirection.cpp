@@ -116,6 +116,7 @@ void CorrelateValuesWithVectorDirection::initialize()
 void CorrelateValuesWithVectorDirection::dataCheck()
 {
   setErrorCondition(0);
+  setWarningCondition(0);
   DataArrayPath tempPath;
 
   QVector<size_t> dims(1, 3);
@@ -753,7 +754,7 @@ const QString CorrelateValuesWithVectorDirection::getGroupName()
 // -----------------------------------------------------------------------------
 const QString CorrelateValuesWithVectorDirection::getSubGroupName()
 {
-  return SIMPL::FilterSubGroups::CrystallographicFilters;
+  return SIMPL::FilterSubGroups::CrystallographyFilters;
 }
 
 // -----------------------------------------------------------------------------

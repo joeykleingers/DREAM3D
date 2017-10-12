@@ -21,16 +21,6 @@ A compatible compiler needs to be installed on your system to be able to build D
 
 For more information, please visit [Installing a Compiler Suite](http://dream3d.bluequartz.net/binaries/Help/DREAM3D/compiler_suite.html) (external link).
 
-<a name="downloading_dream3d">
-
-### Download the Source Code for DREAM.3D ###
-
-</a>
-
-The source code for DREAM.3D must be downloaded using Git.
-
-For more information, please visit [Downloading the Source Code for DREAM.3D](http://dream3d.bluequartz.net/binaries/Help/DREAM3D/source_download.html) (external link).
-
 <a name="installing_sdk">
 
 ### Install the DREAM.3D SDK ###
@@ -56,36 +46,36 @@ Open the **DREAM3D_SDK.cmake** file in the **DREAM3D_SDK** folder.  Check that t
 
 ## Instructions ##
 1. Open CMake and set the **Where is the source code** path to */home/[YOUR-HOME-FOLDER]/Workspace/DREAM3D*.
-![](Images/OSX_source_code_path.png)
+![](Images/OSX_SourceCodePath.png)
 
 2. Set the **Where to build the binaries** path to */home/[YOUR-HOME-FOLDER]/Workspace/Builds/DREAM3D-Build/Debug*.
-![](Images/OSX_build_binaries_debug.png)
+![](Images/OSX_BuildBinariesDebug.png)
 
 3. We are going to create a CMake variable.  Press the **Add Entry** button.
-![](Images/OSX_add_entry.png)
+![](Images/OSX_AddEntry.png)
 
 4. Set the **Name** to *DREAM3D_SDK*.  Set the **Type** to *PATH* and set the **Value** to */opt/DREAM3D_SDK*
-![](Images/OSX_create_cmake_variable.png)
+![](Images/OSX_CreateCmakeVariable.png)
 
-6. You should now have one variable, DREAM3D_SDK.
-![](Images/OSX_cmake_before_config.png)
+5. You should now have one variable, DREAM3D_SDK.
+![](Images/OSX_CmakeBeforeConfig.png)
 
-7. Press the **Configure** button in CMake.
+6. Press the **Configure** button in CMake.
 
-8. Set the generator to be compatible with whatever method you'll be using to work with DREAM.3D.  For example:
+7. Set the generator to be compatible with whatever method you'll be using to work with DREAM.3D.  For example:
     For command line use, set it to **Unix Makefiles** or, if installed, **Ninja**.  Any generator can be used for command line, but these are the recommended ones.
     
 	Make sure **Use default native compilers** is checked.
-![](Images/OSX_generator.png)
+![](Images/OSX_Generator.png)
 
-9. When the configuration is finished, make sure that **CMAKE_BUILD_TYPE** is set to *Debug*.
+8. When the configuration is finished, make sure that **CMAKE_BUILD_TYPE** is set to *Debug*.
 
-10. Press the **Configure** button in CMake again.  You may need to click **Configure** a few times until all the red highlights are gone.
-![](Images/OSX_cmake_after_config.png)
+9. Press the **Configure** button in CMake again.  You may need to click **Configure** a few times until all the red highlights are gone.
+![](Images/OSX_CmakeAfterConfig.png)
 
-11. Press the **Generate** button in CMake to generate the build files.
+10. Press the **Generate** button in CMake to generate the build files.
 
-12. Repeat steps 1-10, except use path */home/[YOUR-HOME-FOLDER]/Workspace/Builds/DREAM3D-Build/Release* for step 2 and set **CMAKE_BUILD_TYPE** to *Release* in step 9.
+11. Repeat steps 1-10, except use path */home/[YOUR-HOME-FOLDER]/Workspace/Builds/DREAM3D-Build/Release* for step 2 and set **CMAKE_BUILD_TYPE** to *Release* in step 9.
 
 ### Using the Command Line (Advanced Users Only) ###
 Navigate to the DREAM3D directory, make a build directory, and navigate into your newly created build directory.  Configure DREAM.3D.
@@ -100,4 +90,4 @@ Once you have configured DREAM.3D, simply build DREAM.3D in your preferred IDE, 
 ---
 **Next Page**: [Creating a Filter](http://dream3d.bluequartz.net/binaries/Help/DREAM3D/creating_a_filter.html)
 
-**Previous Page**: [Downloading the DREAM.3D Source Code](http://dream3d.bluequartz.net/binaries/Help/DREAM3D/source_download.html)
+**Previous Page**: <a href="https://github.com/bluequartzsoftware/DREAM3DSuperbuild/blob/develop/docs/Making_an_SDK_Linux.md">Making an SDK</a>
