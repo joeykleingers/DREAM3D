@@ -37,7 +37,6 @@ set(_PublicFilters
   VtkRectilinearGridWriter
   VtkStructuredPointsReader
   WriteStlFile
-  ReadHDF5File
 )
 
 

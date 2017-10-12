@@ -5,11 +5,9 @@
 #-- This code was partly written under US Air Force Contract FA8650-07-D-5800
 #--////////////////////////////////////////////////////////////////////////////
 set (${PLUGIN_NAME}_FilterParameters_SRCS
-	${${PLUGIN_NAME}_SOURCE_DIR}/FilterParameters/ReadHDF5FileFilterParameter.cpp
 )
 
 set (${PLUGIN_NAME}_FilterParameters_HDRS
-	${${PLUGIN_NAME}_SOURCE_DIR}/FilterParameters/ReadHDF5FileFilterParameter.h
 
 )
 

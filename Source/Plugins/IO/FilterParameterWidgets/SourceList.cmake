@@ -5,12 +5,11 @@ set(${PLUGIN_NAME}_ParameterWidgets_UIS "")
 
 
 set(${PLUGIN_NAME}_PARAMETER_WIDGETS
-  ReadHDF5FileWidget
+  
 )
 
 set(${PLUGIN_NAME}_EXTRA_CLASSES
-  ReadHDF5TreeModel
-  ReadHDF5TreeModelItem
+
 )
 
 # --------------------------------------------------------------------
@@ -57,18 +56,18 @@ endforeach()
 # Add all extra class files
 set(${PLUGIN_NAME}_ParameterWidgets_MOC_HDRS
   ${${PLUGIN_NAME}_ParameterWidgets_MOC_HDRS}
-  ${${PLUGIN_NAME}_SOURCE_DIR}/FilterParameterWidgets/ReadHDF5TreeModel.h
+
   )
 set(${PLUGIN_NAME}_ParameterWidgets_HDRS
-  ${${PLUGIN_NAME}_SOURCE_DIR}/FilterParameterWidgets/ReadHDF5TreeModelItem.h
   )
 set(${PLUGIN_NAME}_ParameterWidgets_SRCS
   ${${PLUGIN_NAME}_ParameterWidgets_SRCS}
-  ${${PLUGIN_NAME}_SOURCE_DIR}/FilterParameterWidgets/ReadHDF5TreeModel.cpp
-  ${${PLUGIN_NAME}_SOURCE_DIR}/FilterParameterWidgets/ReadHDF5TreeModelItem.cpp
+
+
   )
 set(${PLUGIN_NAME}_ParameterWidgets_UIS
   ${${PLUGIN_NAME}_ParameterWidgets_UIS}
+
   )
 
 # --------------------------------------------------------------------
