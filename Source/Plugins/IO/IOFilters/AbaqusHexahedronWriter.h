@@ -71,6 +71,9 @@ public:
   SIMPL_FILTER_PARAMETER(DataArrayPath, FeatureIdsArrayPath)
   Q_PROPERTY(DataArrayPath FeatureIdsArrayPath READ getFeatureIdsArrayPath WRITE setFeatureIdsArrayPath)
 
+  SIMPL_FILTER_PARAMETER(DataArrayPath, EulersArrayPath)
+  Q_PROPERTY(DataArrayPath EulersArrayPath READ getEulersArrayPath WRITE setEulersArrayPath)
+
   SIMPL_FILTER_PARAMETER(int, HourglassStiffness)
   Q_PROPERTY(int HourglassStiffness READ getHourglassStiffness WRITE setHourglassStiffness)
 
@@ -179,6 +182,15 @@ protected:
 
 private:
   DEFINE_DATAARRAY_VARIABLE(int32_t, FeatureIds)
+  DEFINE_DATAARRAY_VARIABLE(float, Eulers)
+
+  /**
+   * @brief writeEulers Writes the eulers file
+   * @param fileName Output file name
+   * @param totalPoints Total points of incoming volume
+   * @return
+   */
+  int32_t writeEulers(const QString &filePath, size_t totalPoints);
 
   /**
    * @brief writeNodes Writes the _nodes.inp file
